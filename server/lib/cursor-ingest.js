@@ -175,25 +175,30 @@ function isCursorWorkingIdle(main, activityMs, sessionUpdatedAt) {
  */
 function healCursorOrphanAgents(dbModule) {
   const { db } = dbModule;
-  const rows = db
-    .prepare(
-      `SELECT a.id, a.session_id, s.ended_at AS session_ended_at, s.updated_at AS session_updated_at
-       FROM agents a JOIN sessions s ON s.id = a.session_id
-       WHERE s.provider = 'cursor' AND s.status IN ('completed', 'abandoned')
-         AND a.status NOT IN ('completed', 'error')`
-    )
-    .all();
-  if (rows.length === 0) return [];
+  const select = db.prepare(
+    `SELECT a.id, a.session_id, s.ended_at AS session_ended_at, s.updated_at AS session_updated_at
+     FROM agents a JOIN sessions s ON s.id = a.session_id
+     WHERE s.provider = 'cursor' AND s.status IN ('completed', 'abandoned')
+       AND a.status NOT IN ('completed', 'error')`
+  );
+  // Re-check the session state observed by the SELECT: a hook or another
+  // dashboard on the same database may reactivate the session in between, and
+  // its now-live agent must not be completed.
   const complete = db.prepare(
     `UPDATE agents SET status = 'completed', current_tool = NULL, awaiting_input_since = NULL,
        ended_at = COALESCE(ended_at, ?), updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-     WHERE id = ? AND status NOT IN ('completed', 'error')`
+     WHERE id = ? AND session_id = ? AND status NOT IN ('completed', 'error')
+       AND EXISTS (
+         SELECT 1 FROM sessions s
+         WHERE s.id = agents.session_id AND s.provider = 'cursor'
+           AND s.status IN ('completed', 'abandoned')
+       )`
   );
   const healed = new Set();
   db.transaction(() => {
-    for (const row of rows) {
+    for (const row of select.all()) {
       const endedAt = row.session_ended_at || row.session_updated_at || new Date().toISOString();
-      if (complete.run(endedAt, row.id).changes > 0) healed.add(row.session_id);
+      if (complete.run(endedAt, row.id, row.session_id).changes > 0) healed.add(row.session_id);
     }
   })();
   return [...healed];

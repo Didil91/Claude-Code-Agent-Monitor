@@ -499,6 +499,40 @@ describe("Cursor session lifecycle", () => {
     assert.deepEqual(healCursorOrphanAgents(require("../db")), [], "heal is idempotent");
   });
 
+  it("does not heal an agent whose session is reactivated mid-heal", () => {
+    const sessionId = "8ee0f943-0b42-4aa0-92d0-dd56e28bca05";
+    stmts.insertSession.run(sessionId, "Reactivated", "completed", null, null, null);
+    db.prepare("UPDATE sessions SET provider = 'cursor' WHERE id = ?").run(sessionId);
+    stmts.insertAgent.run(
+      `${sessionId}-main`,
+      sessionId,
+      "Cursor · Reactivated",
+      "main",
+      null,
+      "working",
+      null,
+      null,
+      null
+    );
+    // Simulate a hook reactivating the session after the heal's SELECT ran.
+    const racingDb = Object.create(db);
+    racingDb.prepare = (sql) => {
+      const statement = db.prepare(sql);
+      if (!/^\s*SELECT a\.id/.test(sql)) return statement;
+      return {
+        all: (...args) => {
+          const rows = statement.all(...args);
+          db.prepare("UPDATE sessions SET status = 'active' WHERE id = ?").run(sessionId);
+          return rows;
+        },
+      };
+    };
+    racingDb.transaction = (fn) => db.transaction(fn);
+
+    assert.deepEqual(healCursorOrphanAgents({ db: racingDb, stmts }), []);
+    assert.equal(stmts.getAgent.get(`${sessionId}-main`).status, "working");
+  });
+
   it("moves a live Cursor session from working to waiting once the turn goes idle", async () => {
     const sessionId = "7dd0f943-0b42-4aa0-92d0-dd56e28bca04";
     const transcript = cursorTranscriptPath(sessionId);
