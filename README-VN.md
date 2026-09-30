@@ -18,6 +18,7 @@ Bảng điều khiển chuyên nghiệp để theo dõi Claude Code, Cursor và 
 ![multer](https://img.shields.io/badge/multer-multipart_upload-FF6B6B?style=flat-square&logo=express&logoColor=white)
 ![adm-zip](https://img.shields.io/badge/adm--zip-archive_extract-FBBF24?style=flat-square&logo=files&logoColor=white)
 ![tar](https://img.shields.io/badge/tar-tgz_extract-A78BFA?style=flat-square&logo=gnu&logoColor=white)
+![Commander CLI](https://img.shields.io/badge/Commander_CLI-14-F05032?style=flat-square&logo=gnubash&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Javascript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?style=flat-square&logo=javascript&logoColor=white)
@@ -667,68 +668,65 @@ flowchart LR
 
 ## CLI `ccam`
 
-Toàn bộ bề mặt tính năng của dashboard cũng dùng được từ terminal qua CLI **`ccam`** không phụ thuộc thư viện ngoài (`bin/ccam.js`), được liên kết tự động bởi `npm run setup` (qua `npm link` kiểu fail-soft). CLI tự tìm server đang chạy qua `~/.claude/.agent-dashboard.json` (cùng sổ đăng ký mà hook handler dùng; ghi đè bằng `CLAUDE_DASHBOARD_PORT`/`DASHBOARD_PORT`, mặc định `http://127.0.0.1:4820`).
+Toàn bộ bề mặt tính năng của dashboard cũng dùng được từ mọi terminal qua CLI **`ccam`** (`bin/ccam.js` → `cli/`), xây dựng trên [Commander.js](https://github.com/tj/commander.js) — bản tương đương Cobra của Go cho Node: cây lệnh lồng nhau với trợ giúp được sinh tự động và nhóm theo từng cấp, tùy chọn toàn cục được kế thừa, tùy chọn có kiểm tra giá trị hợp lệ, gợi ý "có phải ý bạn là", và tự hoàn thành shell kiểu Cobra. CLI được liên kết tự động bởi `npm run setup` (qua `npm link`), sau đó `ccam <command>` chạy được ở mọi thư mục. Máy chủ đích lần lượt là `--server <url>` / `CCAM_URL`, rồi `CLAUDE_DASHBOARD_PORT` / `DASHBOARD_PORT`, rồi sổ đăng ký server `~/.claude/.agent-dashboard.json` (cùng sổ mà hook handler dùng), cuối cùng là `http://127.0.0.1:4820`.
 
 ```bash
 # Máy chủ
-ccam status                       # chỉ báo ● đang chạy / ○ chưa chạy
-ccam start [--port N]             # khởi động server chạy nền (detached)
-ccam stop                         # dừng server chạy nền một cách nhẹ nhàng
-ccam repl                         # shell tương tác (cũng có: shell, i)
+ccam status | health                  # ● đang chạy / ○ chưa chạy; phiên bản + dấu thời gian
+ccam start [--port N] | stop | restart  # server production chạy nền
+ccam logs [-n N] [-f]                 # xem data/ccam-server.log
+ccam open [page] [--session id]       # mở dashboard, một trang hoặc một phiên
+ccam repl                             # shell tương tác (cũng: shell, i)
 
 # Giám sát
-ccam health                       # dashboard có đang chạy không?
-ccam stats                        # tổng số, sự kiện hôm nay, phân bố trạng thái
-ccam kanban                       # phiên + agent nhóm theo cột trạng thái
-ccam tail [--session <id>]        # luồng sự kiện trực tiếp trong terminal (Ctrl+C để dừng)
+ccam overview [--watch]               # ảnh chụp trực tiếp một màn hình (bí danh: top)
+ccam stats | kanban                   # tổng số + phân bố trạng thái / làn trạng thái
+ccam tail [--session id] [--type T] [--tool N]   # luồng sự kiện trực tiếp
+ccam stream [--type new_event,…]      # luồng WebSocket thời gian thực thô
+ccam watch -n 5 <command …>           # chạy lại bất kỳ lệnh nào theo chu kỳ
 
 # Dữ liệu
-ccam sessions [--status s] [--q text] [--limit n]
-ccam session <id>                 # chi tiết: cây agent, chi phí, sự kiện gần nhất
-ccam agents   [--status s] [--session id]
-ccam events   [--session id] [--limit n]
+ccam sessions [--status s] [--q text] [--cwd dir] [--sort price] [--limit n]
+ccam sessions get|stats|cost|agents|events|transcripts <id>
+ccam sessions transcript <id>         # cuộc hội thoại dưới dạng nhật ký chat dễ đọc
+ccam sessions rename <id> <name…> | update <id> | create | facets
+ccam agents [list|get|update|create]  # agent; ccam session <id> = sessions get
+ccam events [--type T] [--tool N] [--q text] [--from iso] | events facets
 
 # Phân tích
-ccam analytics                    # tổng token, công cụ hàng đầu, loại agent
-ccam workflows [--session id]     # thống kê workflow-intelligence và các mẫu
-ccam runs [--session id]          # các lần chạy Workflow động
-ccam cost [--session <id>]        # tổng chi phí ước tính theo model
-                                  # (--session giới hạn ở một phiên; hiển thị phụ phí công cụ máy chủ;
-                                  #  cảnh báo model có mức dùng nhưng chưa có quy tắc định giá)
+ccam analytics                        # token, chi phí, công cụ hàng đầu, biểu đồ nhỏ theo ngày
+ccam workflows [session <id>]         # trí tuệ workflow + mẫu
+ccam runs [list|get <run-id>]         # lần chạy của công cụ Workflow
+ccam run list|history|start|follow|send|stop …   # agent do dashboard khởi chạy
+ccam cost [--session id] [--daily]    # chi phí theo model, phụ phí, model chưa định giá
 
 # Cảnh báo & webhook
-ccam alerts [--unacked]           # luồng cảnh báo đã kích hoạt
-ccam alerts ack <id> | ack-all    # xác nhận cảnh báo
-ccam rules                        # danh sách quy tắc cảnh báo
-ccam webhooks                     # danh sách đích webhook
-ccam webhooks test <id>           # gửi cảnh báo thử tổng hợp
+ccam alerts [--unacked] | ack <id> | ack-all
+ccam alert-rules list|types|create|update|enable|disable|delete
+ccam webhooks list|get|providers|deliveries|create|update|enable|disable|delete|test
 
-# Giá
-ccam pricing                      # danh sách quy tắc định giá (gồm cột fast-mode & intro)
-ccam pricing set <pattern> --input N --output N [--cache-read N --cache-write N]
-                 [--cache-write-1h N] [--fast-input N --fast-output N]
-                 [--intro-input N --intro-output N … --intro-until YYYY-MM-DD]
-ccam pricing delete <pattern>
-ccam pricing reset
+# Định giá
+ccam pricing [list] | set <pattern> --input N --output N [--fast-* …] [--intro-* …] | delete | reset
+ccam pricing gpt|cursor [list|set|delete]   # bảng giá OpenAI/Codex và Cursor
 
-# Nhập
-ccam import rescan                # quét lại ~/.claude/projects
-ccam import path <dir>            # nhập mọi .jsonl dưới một thư mục
+# Nhập & nguồn dữ liệu từ xa
+ccam import guide|rescan|path <dir>|upload <files…>|reimport
+ccam import-data <file.json>          # khôi phục bản xuất (idempotent)
+ccam remote-sources list|get|add|update|enable|disable|test|sync|rm
 
 # Quản trị
-ccam doctor                       # chẩn đoán kết nối, hook và cơ sở dữ liệu
-ccam info                         # JSON thông tin hệ thống thô
-ccam export [file.json]           # xuất toàn bộ dữ liệu dạng JSON
-ccam import-data <file.json>      # khôi phục bản xuất (idempotent, không phá hủy)
-ccam cleanup --hours N --days M   # bỏ phiên treo / dọn phiên cũ
-ccam reinstall-hooks              # cài lại hook Claude Code
-ccam update-check                 # bản checkout có chậm hơn upstream? (in lệnh cập nhật)
-ccam clear-data --yes             # xóa TOÀN BỘ dữ liệu (bắt buộc --yes)
-ccam open                         # mở dashboard trong trình duyệt
-ccam version                      # in phiên bản CLI (cũng có --version / -v)
+ccam doctor | info | export [file|-] | cleanup --hours N --days M
+ccam hooks [status|install] | reinstall-hooks | config claude|codex …
+ccam updates [status|check] | update-check | metrics [--grep re]
+ccam home [set claude|codex <path>] | push key|send|subscribe|unsubscribe
+ccam api [METHOD] /api/path [--data JSON]   # mọi endpoint; ghi cần --yes
+ccam mcp [stdio|http|repl] | clear-data --yes
+
+# CLI
+ccam help [command…] | commands [--json] | completion bash|zsh|fish | version
 ```
 
-Các lệnh dựa trên API cần server đang chạy — khi chưa chạy, **các lệnh chỉ-đọc tự động chuyển sang đọc trực tiếp `data/dashboard.db`** (kèm banner `⚠ Offline mode` rõ ràng, và các phiên `active` đã chết trong DB được hiệu chỉnh khi hiển thị bằng chính probe kiểm tra tiến trình mà watchdog của server sử dụng), còn các lệnh không thể chạy đúng nếu thiếu server (`tail` trực tiếp, analytics/tính chi phí, các thao tác ghi) in chỉ báo `○ Dashboard server is NOT running` cùng lý do cụ thể và lệnh khởi động; `ccam start` đưa server production lên chạy nền. Các lệnh đọc luôn an toàn; lệnh phá hủy duy nhất (`clear-data`) từ chối chạy nếu thiếu `--yes` tường minh. Đầu ra là một giao diện terminal đầy đủ — bảng kẻ khung với cột số căn phải, biểu tượng trạng thái (`● active`, `○ waiting`, `✔ completed`, `✖ error`), biểu đồ thanh inline cho stats/analytics/cost, và cây agent `├─`/`└─` thực thụ — với màu ANSI tự bật trên TTY, tắt khi pipe, và điều khiển được qua `--no-color` / `NO_COLOR` / `FORCE_COLOR`. Để theo dõi liên tục, **`ccam repl`** (bí danh `shell` / `i`) mở một shell tương tác nơi bạn gõ lệnh mà không cần tiền tố `ccam` — kèm biểu ngữ chào CCAM, tự hoàn thành bằng Tab, lịch sử phím mũi tên được lưu lại, một dấu nhắc hiển thị trạng thái server trực tiếp (`● host` khi bật / `○ offline` khi tắt), menu `help` / `help <cmd>` phân nhóm, và một built-in `watch [giây] <lệnh>` tự làm mới bất kỳ lệnh nào (ví dụ `watch 5 kanban`); mỗi dòng chạy như một tiến trình con biệt lập, nên việc từ chối khi offline hay một `tail` đang chặn không bao giờ làm sập shell. Nếu `ccam` chưa có trên PATH, chạy `npm link` một lần từ thư mục gốc của repo. Tài liệu đầy đủ — cờ, thứ tự phát hiện server, REPL, mô hình an toàn, mã thoát — tại [docs/CLI.md](./docs/CLI.md).
+Mọi nhóm lệnh mặc định liệt kê tài nguyên (`ccam alerts` ≡ `ccam alerts list`), mọi lệnh đều hỗ trợ `--help`, và `ccam commands` in toàn bộ cây lệnh. Đầu ra dành cho cả con người **lẫn** máy: trên TTY là giao diện terminal đầy đủ (bảng kẻ khung, biểu tượng trạng thái, biểu đồ thanh, biểu đồ nhỏ, cây agent `├─`/`└─`, chế độ xem hội thoại kiểu nhật ký chat, trợ giúp có màu); đầu ra qua pipe là văn bản thuần; và **`--json`** (hoặc `CCAM_OUTPUT=json`) trên mọi lệnh in JSON ổn định — NDJSON cho `tail` / `stream` / `run follow` — với lỗi dạng `{"error":{"code","message"}}` trên stderr và mã thoát `0`/`1`. `ccam commands --json` xuất lược đồ của mọi lệnh, đối số và tùy chọn cho agent. Các thao tác ghi cần xác nhận: `--yes`, hoặc `y/N` tương tác trên terminal (shell không tương tác phải truyền `--yes`); `clear-data` luôn yêu cầu `--yes` nguyên văn. Khi server không chạy, **các lệnh chỉ đọc chuyển sang đọc trực tiếp `data/dashboard.db`** (kèm biểu ngữ `⚠ Offline mode`, và các phiên `active` đã chết được hiệu chỉnh ở phía hiển thị bằng đầu dò process-liveness của server), còn các lệnh chỉ chạy được với server sẽ in chỉ báo `○ Dashboard server is NOT running` kèm lý do. **`ccam repl`** là shell tương tác với biểu ngữ CCAM, tự hoàn thành bằng Tab dựa trên cây lệnh thật, lịch sử được lưu, dấu nhắc trạng thái trực tiếp, `help <cmd>`, các lệnh dựng sẵn `json` và `watch [secs] <cmd>`; mỗi dòng chạy trong một tiến trình con riêng biệt. Tự hoàn thành shell: `source <(ccam completion zsh)`. Nếu `ccam` không có trong PATH, hãy chạy `npm link` một lần ở thư mục gốc repo. Tài liệu đầy đủ tại [docs/CLI.md](./docs/CLI.md).
 
 ## Tập lệnh npm
 

@@ -18,6 +18,7 @@
 ![multer](https://img.shields.io/badge/multer-multipart_upload-FF6B6B?style=flat-square&logo=express&logoColor=white)
 ![adm-zip](https://img.shields.io/badge/adm--zip-archive_extract-FBBF24?style=flat-square&logo=files&logoColor=white)
 ![tar](https://img.shields.io/badge/tar-tgz_extract-A78BFA?style=flat-square&logo=gnu&logoColor=white)
+![Commander CLI](https://img.shields.io/badge/Commander_CLI-14-F05032?style=flat-square&logo=gnubash&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Javascript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?style=flat-square&logo=javascript&logoColor=white)
@@ -669,68 +670,65 @@ flowchart LR
 
 ## `ccam` CLI
 
-仪表盘的完整功能面同样可以在终端中使用——零依赖的 **`ccam`** CLI（`bin/ccam.js`），由 `npm run setup` 自动链接（失败即降级的 `npm link`）。CLI 通过 `~/.claude/.agent-dashboard.json`（与 hook 处理器相同的注册表）自动发现正在运行的服务器，可用 `CLAUDE_DASHBOARD_PORT`/`DASHBOARD_PORT` 覆盖，默认 `http://127.0.0.1:4820`。
+仪表盘的完整功能面同样可以在任意终端中通过 **`ccam`** CLI（`bin/ccam.js` → `cli/`）使用。它基于 [Commander.js](https://github.com/tj/commander.js)——Node 版的 Go Cobra：嵌套命令树、每一层自动生成的分组帮助、继承的全局选项、带可选值校验的选项、“你是不是想输入”建议，以及 Cobra 风格的 shell 补全。`npm run setup` 会自动链接它（通过 `npm link`），之后 `ccam <command>` 可在任意目录运行。目标服务器依次取 `--server <url>` / `CCAM_URL`、`CLAUDE_DASHBOARD_PORT` / `DASHBOARD_PORT`、实时服务器注册表 `~/.claude/.agent-dashboard.json`（与 hook 处理器相同），最后回退到 `http://127.0.0.1:4820`。
 
 ```bash
 # 服务器
-ccam status                       # ● 运行中 / ○ 未运行 指示器
-ccam start [--port N]             # 在后台启动服务器（分离进程）
-ccam stop                         # 优雅地停止后台服务器
-ccam repl                         # 交互式 shell（也可用 shell、i）
+ccam status | health                  # ● 运行中 / ○ 未运行；版本 + 时间戳
+ccam start [--port N] | stop | restart  # 后台生产服务器
+ccam logs [-n N] [-f]                 # 查看 data/ccam-server.log
+ccam open [page] [--session id]       # 打开仪表盘、某个页面或某个会话
+ccam repl                             # 交互式 shell（也可用 shell、i）
 
 # 监控
-ccam health                       # 仪表盘是否在运行？
-ccam stats                        # 总量、今日事件、状态分布
-ccam kanban                       # 会话 + agent 按状态列分组
-ccam tail [--session <id>]        # 终端里的实时事件流（Ctrl+C 停止）
+ccam overview [--watch]               # 单屏实时概览（别名：top）
+ccam stats | kanban                   # 总量 + 状态分布 / 状态泳道
+ccam tail [--session id] [--type T] [--tool N]   # 实时事件流
+ccam stream [--type new_event,…]      # 原始实时 WebSocket 推送
+ccam watch -n 5 <command …>           # 按间隔重复运行任意命令
 
 # 数据
-ccam sessions [--status s] [--q text] [--limit n]
-ccam session <id>                 # 详情：agent 树、成本、最近事件
-ccam agents   [--status s] [--session id]
-ccam events   [--session id] [--limit n]
+ccam sessions [--status s] [--q text] [--cwd dir] [--sort price] [--limit n]
+ccam sessions get|stats|cost|agents|events|transcripts <id>
+ccam sessions transcript <id>         # 以可读聊天记录形式查看对话
+ccam sessions rename <id> <name…> | update <id> | create | facets
+ccam agents [list|get|update|create]  # agent；ccam session <id> = sessions get
+ccam events [--type T] [--tool N] [--q text] [--from iso] | events facets
 
 # 洞察
-ccam analytics                    # token 总量、常用工具、agent 类型
-ccam workflows [--session id]     # 工作流智能统计与模式
-ccam runs [--session id]          # 动态 Workflow 工具运行
-ccam cost [--session <id>]        # 按模型细分的总预估成本
-                                  # （--session 限定为单个会话；显示服务器工具附加费用；
-                                  #  对有用量但无定价规则的模型发出警告）
+ccam analytics                        # token、成本、热门工具、每日迷你走势图
+ccam workflows [session <id>]         # 工作流智能 + 模式
+ccam runs [list|get <run-id>]         # Workflow 工具运行
+ccam run list|history|start|follow|send|stop …   # 仪表盘启动的 agent
+ccam cost [--session id] [--daily]    # 按模型成本、附加费、未定价模型
 
-# 告警 & webhook
-ccam alerts [--unacked]           # 触发告警流
-ccam alerts ack <id> | ack-all    # 确认告警
-ccam rules                        # 告警规则列表
-ccam webhooks                     # webhook 目标列表
-ccam webhooks test <id>           # 发送合成测试告警
+# 告警与 Webhook
+ccam alerts [--unacked] | ack <id> | ack-all
+ccam alert-rules list|types|create|update|enable|disable|delete
+ccam webhooks list|get|providers|deliveries|create|update|enable|disable|delete|test
 
-# 价格
-ccam pricing                      # 定价规则列表（含 fast-mode 与 intro 列）
-ccam pricing set <pattern> --input N --output N [--cache-read N --cache-write N]
-                 [--cache-write-1h N] [--fast-input N --fast-output N]
-                 [--intro-input N --intro-output N … --intro-until YYYY-MM-DD]
-ccam pricing delete <pattern>
-ccam pricing reset
+# 定价
+ccam pricing [list] | set <pattern> --input N --output N [--fast-* …] [--intro-* …] | delete | reset
+ccam pricing gpt|cursor [list|set|delete]   # OpenAI/Codex 与 Cursor 价目表
 
-# 导入
-ccam import rescan                # 重新扫描 ~/.claude/projects
-ccam import path <dir>            # 导入目录下所有 .jsonl
+# 导入与远程数据源
+ccam import guide|rescan|path <dir>|upload <files…>|reimport
+ccam import-data <file.json>          # 恢复导出（幂等）
+ccam remote-sources list|get|add|update|enable|disable|test|sync|rm
 
 # 管理
-ccam doctor                       # 连接、hook 与数据库诊断
-ccam info                         # 原始系统信息 JSON
-ccam export [file.json]           # 导出全部数据为 JSON
-ccam import-data <file.json>      # 恢复导出（幂等、非破坏性）
-ccam cleanup --hours N --days M   # 放弃滞留会话 / 清理旧会话
-ccam reinstall-hooks              # 重新安装 Claude Code hook
-ccam update-check                 # 检出是否落后于 upstream？（打印更新命令）
-ccam clear-data --yes             # 删除全部数据（必须 --yes）
-ccam open                         # 在浏览器中打开仪表盘
-ccam version                      # 打印 CLI 版本（也可用 --version / -v）
+ccam doctor | info | export [file|-] | cleanup --hours N --days M
+ccam hooks [status|install] | reinstall-hooks | config claude|codex …
+ccam updates [status|check] | update-check | metrics [--grep re]
+ccam home [set claude|codex <path>] | push key|send|subscribe|unsubscribe
+ccam api [METHOD] /api/path [--data JSON]   # 任意端点；写入需 --yes
+ccam mcp [stdio|http|repl] | clear-data --yes
+
+# CLI
+ccam help [command…] | commands [--json] | completion bash|zsh|fish | version
 ```
 
-基于 API 的命令需要服务器在运行——未运行时，**只读命令会自动回退为直接读取 `data/dashboard.db`**（显示明确的 `⚠ Offline mode` 横幅，且数据库中已死亡的 `active` 会话会用服务器看门狗所用的同一进程存活性探测在显示层校正），而无法在无服务器时正确运行的命令（实时 `tail`、分析/成本计算、写操作）会打印 `○ Dashboard server is NOT running` 指示、具体原因和启动命令；`ccam start` 可在后台拉起生产服务器。读取类命令始终安全；唯一的破坏性命令（`clear-data`）没有显式 `--yes` 时拒绝执行。输出是完整的终端 UI——带右对齐数字列的框线表格、状态图标（`● active`、`○ waiting`、`✔ completed`、`✖ error`）、stats/analytics/cost 的内联条形图，以及真正的 `├─`/`└─` 代理树——ANSI 颜色在 TTY 上自动启用、管道输出时自动关闭，并可通过 `--no-color` / `NO_COLOR` / `FORCE_COLOR` 控制。若需持续监控，**`ccam repl`**（别名 `shell` / `i`）会打开一个交互式 shell，你可以在其中输入命令而无需 `ccam` 前缀——带有 CCAM 欢迎横幅、Tab 补全、可持久化的方向键历史、实时服务器状态提示符（`● host` 在线 / `○ offline` 离线）、分组的 `help` / `help <cmd>` 菜单，以及可自动刷新任意命令的 `watch [秒] <命令>` 内置命令（例如 `watch 5 kanban`）；每一行都作为独立子进程运行，因此离线拒绝或阻塞的 `tail` 都不会拖垮 shell。若 `ccam` 不在 PATH 上，在仓库根目录运行一次 `npm link`。完整参考——标志、服务器发现顺序、REPL、安全模型、退出码——见 [docs/CLI.md](./docs/CLI.md)。
+每个命令组默认列出资源（`ccam alerts` ≡ `ccam alerts list`），每个命令都支持 `--help`，`ccam commands` 打印完整命令树。输出同时面向人类**和**机器：在 TTY 上是完整的终端 UI（框线表格、状态图标、条形图、迷你走势图、`├─`/`└─` agent 树、聊天记录式对话视图、彩色帮助）；管道输出为纯文本；任意命令加 **`--json`**（或 `CCAM_OUTPUT=json`）输出稳定 JSON——`tail` / `stream` / `run follow` 输出 NDJSON——错误以 `{"error":{"code","message"}}` 写到 stderr，退出码为 `0`/`1`。`ccam commands --json` 为 agent 输出每个命令、参数和选项的结构描述。写入操作需确认：`--yes`，或在终端中交互式 `y/N`（非交互 shell 必须传 `--yes`）；`clear-data` 始终需要字面量 `--yes`。服务器未运行时，**只读命令会直接读取 `data/dashboard.db`**（显示 `⚠ Offline mode` 横幅，并用服务器的进程存活探测在显示层修正已结束的 `active` 会话），仅限服务器的命令则打印 `○ Dashboard server is NOT running` 指示器及原因。**`ccam repl`** 是交互式 shell：CCAM 横幅、由真实命令树驱动的 Tab 补全、持久化历史、实时状态提示符、`help <cmd>`、`json` 与 `watch [secs] <cmd>` 内置命令；每一行都在独立子进程中运行。Shell 补全：`source <(ccam completion zsh)`。若 `ccam` 不在 PATH 中，请在仓库根目录运行一次 `npm link`。完整参考见 [docs/CLI.md](./docs/CLI.md)。
 
 ## npm 脚本
 

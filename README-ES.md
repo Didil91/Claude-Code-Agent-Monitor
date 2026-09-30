@@ -18,6 +18,7 @@ Un panel profesional para rastrear sesiones, herramientas, historial de conversa
 ![multer](https://img.shields.io/badge/multer-multipart_upload-FF6B6B?style=flat-square&logo=express&logoColor=white)
 ![adm-zip](https://img.shields.io/badge/adm--zip-archive_extract-FBBF24?style=flat-square&logo=files&logoColor=white)
 ![tar](https://img.shields.io/badge/tar-tgz_extract-A78BFA?style=flat-square&logo=gnu&logoColor=white)
+![Commander CLI](https://img.shields.io/badge/Commander_CLI-14-F05032?style=flat-square&logo=gnubash&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Javascript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?style=flat-square&logo=javascript&logoColor=white)
@@ -670,67 +671,65 @@ Para los clones de git, el servidor `git fetch` periódicamente `origin` y compa
 
 ## CLI `ccam`
 
-La superficie completa de funciones del panel de control también está disponible desde cualquier terminal a través de la CLI **`ccam`** sin dependencias (`bin/ccam.js`). Se vincula automáticamente por `npm run setup` (a través de `npm link`), después de lo cual `ccam <command>` funciona desde cualquier directorio. Descubre el panel de control en ejecución a través de `~/.claude/.agent-dashboard.json` (el mismo registro de servidor en vivo que utiliza el gestor de ganchos), con las sobrepasadas de las variables de entorno `CLAUDE_DASHBOARD_PORT` / `DASHBOARD_PORT`, cayendo en `http://127.0.0.1:4820`.
+La superficie completa de funciones del panel también está disponible desde cualquier terminal a través de la CLI **`ccam`** (`bin/ccam.js` → `cli/`), construida sobre [Commander.js](https://github.com/tj/commander.js) — el equivalente en Node de Cobra de Go: un árbol de comandos anidado con ayuda agrupada generada en cada nivel, opciones globales heredadas, opciones validadas con valores permitidos, sugerencias de "¿quisiste decir…?" y autocompletado de shell al estilo Cobra. `npm run setup` la vincula automáticamente (a través de `npm link`), después de lo cual `ccam <command>` funciona desde cualquier directorio. El servidor de destino es `--server <url>` / `CCAM_URL`, luego `CLAUDE_DASHBOARD_PORT` / `DASHBOARD_PORT`, luego el registro de servidores en vivo `~/.claude/.agent-dashboard.json` (el mismo que usa el gestor de hooks), y por último `http://127.0.0.1:4820`.
 
 ```bash
-# Server
-ccam status                       # ● running / ○ not running indicator
-ccam start [--port N]             # start the server in the background (detached)
-ccam repl                         # interactive shell (also: shell, i)
+# Servidor
+ccam status | health                  # ● en ejecución / ○ detenido; versión + marca de tiempo
+ccam start [--port N] | stop | restart  # servidor de producción en segundo plano
+ccam logs [-n N] [-f]                 # ver data/ccam-server.log
+ccam open [page] [--session id]       # abrir el panel, una página o una sesión
+ccam repl                             # shell interactivo (también: shell, i)
 
-# Monitoring
-ccam health                       # is the dashboard up?
-ccam stats                        # totals, today's events, status distributions
-ccam kanban                       # sessions + agents grouped by status columns
-ccam tail [--session <id>]        # live event feed in the terminal (Ctrl+C stops)
+# Monitorización
+ccam overview [--watch]               # instantánea en vivo de una pantalla (alias: top)
+ccam stats | kanban                   # totales + distribuciones de estado / carriles de estado
+ccam tail [--session id] [--type T] [--tool N]   # feed de eventos en vivo
+ccam stream [--type new_event,…]      # feed WebSocket en tiempo real sin procesar
+ccam watch -n 5 <command …>           # volver a ejecutar cualquier comando a intervalos
 
-# Data
-ccam sessions [--status s] [--q text] [--limit n]
-ccam session <id>                 # detail: agent tree, cost, recent events
-ccam agents   [--status s] [--session id]
-ccam events   [--session id] [--limit n]
+# Datos
+ccam sessions [--status s] [--q text] [--cwd dir] [--sort price] [--limit n]
+ccam sessions get|stats|cost|agents|events|transcripts <id>
+ccam sessions transcript <id>         # la conversación como un registro de chat legible
+ccam sessions rename <id> <name…> | update <id> | create | facets
+ccam agents [list|get|update|create]  # agentes; ccam session <id> = sessions get
+ccam events [--type T] [--tool N] [--q text] [--from iso] | events facets
 
-# Insights
-ccam analytics                    # token totals, top tools, agent types
-ccam workflows [--session id]     # workflow intelligence stats and patterns
-ccam runs [--session id]          # dynamic Workflow-tool runs
-ccam cost [--session <id>]        # total estimated cost with per-model breakdown
-                                  # (--session scopes to one; shows tool surcharges;
-                                  #  warns about models with usage but no pricing rule)
+# Análisis
+ccam analytics                        # tokens, coste, herramientas principales, minigráficos diarios
+ccam workflows [session <id>]         # inteligencia de flujos + patrones
+ccam runs [list|get <run-id>]         # ejecuciones de la herramienta Workflow
+ccam run list|history|start|follow|send|stop …   # agentes lanzados por el panel
+ccam cost [--session id] [--daily]    # coste por modelo, recargos, modelos sin precio
 
-# Alerts & webhooks
-ccam alerts [--unacked]           # fired-alert feed
-ccam alerts ack <id> | ack-all    # acknowledge alerts
-ccam rules                        # list alert rules
-ccam webhooks                     # list webhook targets
-ccam webhooks test <id>           # send a synthetic test alert
+# Alertas y webhooks
+ccam alerts [--unacked] | ack <id> | ack-all
+ccam alert-rules list|types|create|update|enable|disable|delete
+ccam webhooks list|get|providers|deliveries|create|update|enable|disable|delete|test
 
-# Pricing
-ccam pricing                      # list model pricing rules (incl. fast-mode & intro columns)
-ccam pricing set <pattern> --input N --output N [--cache-read N --cache-write N]
-                 [--cache-write-1h N] [--fast-input N --fast-output N]
-                 [--intro-input N --intro-output N … --intro-until YYYY-MM-DD]
-ccam pricing delete <pattern>
-ccam pricing reset
+# Precios
+ccam pricing [list] | set <pattern> --input N --output N [--fast-* …] [--intro-* …] | delete | reset
+ccam pricing gpt|cursor [list|set|delete]   # tarifas de OpenAI/Codex y Cursor
 
-# Import
-ccam import rescan                # re-scan ~/.claude/projects
-ccam import path <dir>            # import every .jsonl under a directory
+# Importación y fuentes remotas
+ccam import guide|rescan|path <dir>|upload <files…>|reimport
+ccam import-data <file.json>          # restaurar una exportación (idempotente)
+ccam remote-sources list|get|add|update|enable|disable|test|sync|rm
 
-# Administration
-ccam doctor                       # connectivity, hooks, and database diagnosis
-ccam info                         # raw system info JSON
-ccam export [file.json]           # full JSON data export
-ccam import-data <file.json>      # restore an export (idempotent, non-destructive)
-ccam cleanup --hours N --days M   # abandon stale / purge old sessions
-ccam reinstall-hooks              # reinstall Claude Code hooks
-ccam update-check                 # is the checkout behind upstream? (prints the update command)
-ccam clear-data --yes             # delete ALL data (requires --yes)
-ccam open                         # open the dashboard in your browser
-ccam version                      # print the CLI version (also --version / -v)
+# Administración
+ccam doctor | info | export [file|-] | cleanup --hours N --days M
+ccam hooks [status|install] | reinstall-hooks | config claude|codex …
+ccam updates [status|check] | update-check | metrics [--grep re]
+ccam home [set claude|codex <path>] | push key|send|subscribe|unsubscribe
+ccam api [METHOD] /api/path [--data JSON]   # cualquier endpoint; las escrituras requieren --yes
+ccam mcp [stdio|http|repl] | clear-data --yes
+
+# CLI
+ccam help [command…] | commands [--json] | completion bash|zsh|fish | version
 ```
 
-Los comandos respaldados por API necesitan que el servidor esté en ejecución, cuando no lo está, **los comandos de solo lectura recurren a la lectura directa de `data/dashboard.db`** (con un banner explícito de `⚠ Modo sin conexión`, y las sesiones `activas` almacenadas pero inactivas corregidas por el mismo proceso de detección de actividad que utiliza el rastreador del servidor), mientras que los comandos que no pueden ejecutarse correctamente sin el servidor (`tail` en vivo, análisis/matemáticas de costos, mutaciones) imprimen el indicador `○ El servidor del panel de control NO está en ejecución` con la razón específica y los comandos de inicio; `ccam start` inicia un servidor de producción en segundo plano. Los comandos de lectura siempre son seguros; el único comando destructivo (`clear-data`) se niega a ejecutarse sin un explícito `--yes`. La salida es una interfaz de usuario completa del terminal: tablas dibujadas en cuadrados con columnas numéricas alineadas a la derecha, iconos de estado (`● activo`, `○ esperando`, `✔ completado`, `✖ error`), gráficos de barras en línea para estadísticas/análisis/costes y árboles de agentes reales `├─`/`└─`: con los colores ANSI habilitados automáticamente en un TTY, desactivados cuando se canalizan y controlables a través de `--no-color` / `NO_COLOR` / `FORCE_COLOR`. Para una sesión de monitoreo en vivo, **`ccam repl`** (alias `shell` / `i`) abre un shell interactivo donde escribes comandos sin el prefijo `ccam` — con un banner de bienvenida CCAM, completado de pestañas, historial persistente de teclas de flecha, una solicitud de estado del servidor en vivo (`● host` arriba / `○ offline` abajo), un menú `help` / `help <cmd>` agrupado y un `watch [secs] <cmd>` incorporado que actualiza automáticamente cualquier comando (por ejemplo, `watch 5 kanban`); cada línea se ejecuta como un proceso hijo aislado, por lo que una negativa fuera de línea o un `tail` bloqueante nunca derriba el shell. Si `ccam` no está en tu PATH (por ejemplo, Se necesitan permisos elevados para `npm link`, ejecute `npm link` una vez desde la raíz del repositorio. Referencia completa: banderas, orden de descubrimiento, el REPL, modelo de seguridad, scripts/códigos de salida, resolución de problemas, en [docs/CLI.md](./docs/CLI.md).
+Cada grupo lista por defecto (`ccam alerts` ≡ `ccam alerts list`), cada comando responde a `--help` y `ccam commands` imprime el árbol completo. La salida está pensada para personas **y** máquinas: en un TTY obtienes una interfaz de terminal completa (tablas con bordes, iconos de estado, gráficos de barras, minigráficos, árboles de agentes `├─`/`└─`, una vista de transcripción tipo chat, ayuda en color); la salida canalizada es texto plano; y **`--json`** (o `CCAM_OUTPUT=json`) en cualquier comando imprime JSON estable — NDJSON para `tail` / `stream` / `run follow` — con los errores como `{"error":{"code","message"}}` en stderr y código de salida `0`/`1`. `ccam commands --json` emite un esquema de cada comando, argumento y opción para agentes. Las escrituras se confirman: `--yes`, o un `y/N` interactivo en una terminal (los shells no interactivos deben pasar `--yes`); `clear-data` siempre requiere un `--yes` literal. Cuando el servidor está detenido, **los comandos de solo lectura recurren a leer `data/dashboard.db` directamente** (con un banner `⚠ Offline mode`, y las sesiones `active` muertas corregidas en la visualización por la sonda de actividad de procesos del servidor), mientras que los comandos que requieren el servidor imprimen el indicador `○ Dashboard server is NOT running` con el motivo. **`ccam repl`** es un shell interactivo con banner CCAM, autocompletado con Tab basado en el árbol de comandos real, historial persistente, un prompt de estado en vivo, `help <cmd>` y los comandos integrados `json` y `watch [secs] <cmd>`; cada línea se ejecuta en un proceso hijo aislado. Autocompletado de shell: `source <(ccam completion zsh)`. Si `ccam` no está en tu PATH, ejecuta `npm link` una vez desde la raíz del repositorio. Referencia completa en [docs/CLI.md](./docs/CLI.md).
 
 ## Scripts npm
 

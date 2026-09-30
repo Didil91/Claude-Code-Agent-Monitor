@@ -19,6 +19,7 @@
 - `client/` for React UI behavior.
 - `mcp/` for local MCP server tooling.
 - `scripts/` for hook/install/import/cleanup utilities.
+- `cli/` for the `ccam` CLI (Commander.js; entry `bin/ccam.js`, reference `docs/CLI.md`).
 
 ## Validation expectations
 - Full local gate (headers + format + client typecheck + server + client tests): `npm run verify`

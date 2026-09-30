@@ -18,6 +18,7 @@ Claude Code, Cursor, Codex 에이전트 세션, 도구 사용, 대화 기록, �
 ![multer](https://img.shields.io/badge/multer-multipart_upload-FF6B6B?style=flat-square&logo=express&logoColor=white)
 ![adm-zip](https://img.shields.io/badge/adm--zip-archive_extract-FBBF24?style=flat-square&logo=files&logoColor=white)
 ![tar](https://img.shields.io/badge/tar-tgz_extract-A78BFA?style=flat-square&logo=gnu&logoColor=white)
+![Commander CLI](https://img.shields.io/badge/Commander_CLI-14-F05032?style=flat-square&logo=gnubash&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Javascript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?style=flat-square&logo=javascript&logoColor=white)
@@ -676,68 +677,65 @@ git 클론의 경우, 서버는 주기적으로 `origin`을 `git fetch`하고 �
 
 ## `ccam` CLI
 
-대시보드의 전체 기능 표면은 의존성 없는 **`ccam`** CLI(`bin/ccam.js`)를 통해 어느 터미널에서든 사용할 수 있습니다. `npm run setup`이 (`npm link`를 통해) 자동으로 링크하며, 이후 `ccam <command>`는 어느 디렉터리에서든 동작합니다. 실행 중인 대시보드는 `~/.claude/.agent-dashboard.json`(Hook 핸들러가 사용하는 것과 동일한 라이브 서버 레지스트리)을 통해 발견하며, `CLAUDE_DASHBOARD_PORT` / `DASHBOARD_PORT` env 재정의를 지원하고, `http://127.0.0.1:4820`으로 폴백합니다.
+대시보드의 전체 기능 표면은 **`ccam`** CLI(`bin/ccam.js` → `cli/`)를 통해 어느 터미널에서든 사용할 수 있습니다. [Commander.js](https://github.com/tj/commander.js) — Go의 Cobra에 해당하는 Node 프레임워크 — 기반으로, 중첩 명령 트리와 모든 단계에서 자동 생성되는 그룹별 도움말, 상속되는 전역 옵션, 선택지 검증이 있는 옵션, "이것을 의도하셨나요" 제안, Cobra 스타일 셸 자동 완성을 제공합니다. `npm run setup`이 (`npm link`를 통해) 자동으로 링크하며, 이후 `ccam <command>`는 어느 디렉터리에서든 동작합니다. 대상 서버는 `--server <url>` / `CCAM_URL`, 그다음 `CLAUDE_DASHBOARD_PORT` / `DASHBOARD_PORT`, 그다음 라이브 서버 레지스트리 `~/.claude/.agent-dashboard.json`(Hook 핸들러와 동일) 순으로 결정되며, 마지막으로 `http://127.0.0.1:4820`으로 폴백합니다.
 
 ```bash
 # 서버
-ccam status                       # ● 실행 중 / ○ 실행 중 아님 표시기
-ccam start [--port N]             # 서버를 백그라운드에서 시작(분리 실행)
-ccam stop                         # 백그라운드 서버를 정상적으로 중지
-ccam repl                         # 대화형 셸(shell, i도 가능)
+ccam status | health                  # ● 실행 중 / ○ 실행 안 됨; 버전 + 타임스탬프
+ccam start [--port N] | stop | restart  # 백그라운드 프로덕션 서버
+ccam logs [-n N] [-f]                 # data/ccam-server.log 보기
+ccam open [page] [--session id]       # 대시보드, 페이지 또는 세션 열기
+ccam repl                             # 대화형 셸 (별칭: shell, i)
 
 # 모니터링
-ccam health                       # 대시보드가 켜져 있는가?
-ccam stats                        # 총계, 오늘의 이벤트, 상태 분포
-ccam kanban                       # 상태 컬럼별로 그룹화된 세션 + 에이전트
-ccam tail [--session <id>]        # 터미널의 실시간 이벤트 피드(Ctrl+C로 중지)
+ccam overview [--watch]               # 한 화면 실시간 스냅샷 (별칭: top)
+ccam stats | kanban                   # 합계 + 상태 분포 / 상태 레인
+ccam tail [--session id] [--type T] [--tool N]   # 실시간 이벤트 피드
+ccam stream [--type new_event,…]      # 원시 실시간 WebSocket 피드
+ccam watch -n 5 <command …>           # 임의 명령을 주기적으로 재실행
 
 # 데이터
-ccam sessions [--status s] [--q text] [--limit n]
-ccam session <id>                 # 상세: 에이전트 트리, 비용, 최근 이벤트
-ccam agents   [--status s] [--session id]
-ccam events   [--session id] [--limit n]
+ccam sessions [--status s] [--q text] [--cwd dir] [--sort price] [--limit n]
+ccam sessions get|stats|cost|agents|events|transcripts <id>
+ccam sessions transcript <id>         # 대화를 읽기 쉬운 채팅 로그로
+ccam sessions rename <id> <name…> | update <id> | create | facets
+ccam agents [list|get|update|create]  # 에이전트; ccam session <id> = sessions get
+ccam events [--type T] [--tool N] [--q text] [--from iso] | events facets
 
 # 인사이트
-ccam analytics                    # 토큰 총계, 상위 도구, 에이전트 유형
-ccam workflows [--session id]     # 워크플로 인텔리전스 통계 및 패턴
-ccam runs [--session id]          # 동적 Workflow 도구 실행
-ccam cost [--session <id>]        # 모델별 내역이 포함된 총 예상 비용
-                                  # (--session 은 단일 세션으로 범위 지정; 서버 도구 추가 요금 표시;
-                                  #  사용량은 있지만 가격 책정 규칙이 없는 모델에 대해 경고)
+ccam analytics                        # 토큰, 비용, 상위 도구, 일별 스파크라인
+ccam workflows [session <id>]         # 워크플로 인텔리전스 + 패턴
+ccam runs [list|get <run-id>]         # Workflow 도구 실행
+ccam run list|history|start|follow|send|stop …   # 대시보드에서 실행한 에이전트
+ccam cost [--session id] [--daily]    # 모델별 비용, 부가 요금, 가격 미지정 모델
 
-# 알림 및 웹훅
-ccam alerts [--unacked]           # 발생한 알림 피드
-ccam alerts ack <id> | ack-all    # 알림 확인 처리
-ccam rules                        # 알림 규칙 나열
-ccam webhooks                     # 웹훅 대상 나열
-ccam webhooks test <id>           # 합성 테스트 알림 전송
+# 알림 & 웹훅
+ccam alerts [--unacked] | ack <id> | ack-all
+ccam alert-rules list|types|create|update|enable|disable|delete
+ccam webhooks list|get|providers|deliveries|create|update|enable|disable|delete|test
 
-# 가격 책정
-ccam pricing                      # 모델 가격 책정 규칙 나열(fast-mode 및 intro 컬럼 포함)
-ccam pricing set <pattern> --input N --output N [--cache-read N --cache-write N]
-                 [--cache-write-1h N] [--fast-input N --fast-output N]
-                 [--intro-input N --intro-output N … --intro-until YYYY-MM-DD]
-ccam pricing delete <pattern>
-ccam pricing reset
+# 가격
+ccam pricing [list] | set <pattern> --input N --output N [--fast-* …] [--intro-* …] | delete | reset
+ccam pricing gpt|cursor [list|set|delete]   # OpenAI/Codex 및 Cursor 요금표
 
-# 가져오기
-ccam import rescan                # ~/.claude/projects 재스캔
-ccam import path <dir>            # 디렉터리 아래의 모든 .jsonl 가져오기
+# 가져오기 & 원격 소스
+ccam import guide|rescan|path <dir>|upload <files…>|reimport
+ccam import-data <file.json>          # 내보내기 복원 (멱등)
+ccam remote-sources list|get|add|update|enable|disable|test|sync|rm
 
 # 관리
-ccam doctor                       # 연결, Hook, 데이터베이스 진단
-ccam info                         # 원시 시스템 정보 JSON
-ccam export [file.json]           # 전체 JSON 데이터 내보내기
-ccam import-data <file.json>      # 내보내기 복원 (멱등, 비파괴적)
-ccam cleanup --hours N --days M   # 오래된 세션 abandon 처리 / 이전 세션 삭제
-ccam reinstall-hooks              # Claude Code Hook 재설치
-ccam update-check                 # 체크아웃이 업스트림보다 뒤처져 있는가?(업데이트 명령어 출력)
-ccam clear-data --yes             # 모든 데이터 삭제(--yes 필요)
-ccam open                         # 브라우저에서 대시보드 열기
-ccam version                      # CLI 버전 출력(--version / -v도 가능)
+ccam doctor | info | export [file|-] | cleanup --hours N --days M
+ccam hooks [status|install] | reinstall-hooks | config claude|codex …
+ccam updates [status|check] | update-check | metrics [--grep re]
+ccam home [set claude|codex <path>] | push key|send|subscribe|unsubscribe
+ccam api [METHOD] /api/path [--data JSON]   # 모든 엔드포인트; 쓰기는 --yes 필요
+ccam mcp [stdio|http|repl] | clear-data --yes
+
+# CLI
+ccam help [command…] | commands [--json] | completion bash|zsh|fish | version
 ```
 
-API 기반 명령어는 서버가 실행 중이어야 합니다 — 서버가 실행 중이 아닐 때, **읽기 전용 명령어는 `data/dashboard.db`를 직접 읽는 방식으로 폴백하며**(명시적인 `⚠ Offline mode` 배너와 함께, 그리고 저장되어 있지만 죽은 `active` 세션은 서버 워치독이 사용하는 것과 동일한 프로세스 활성 상태 프로브로 표시 측에서 보정됩니다), 서버 없이는 올바르게 실행될 수 없는 명령어(라이브 `tail`, analytics/cost 계산, 변경 작업)는 구체적인 이유와 시작 명령어와 함께 `○ Dashboard server is NOT running` 표시기를 출력합니다; `ccam start`는 프로덕션 서버를 백그라운드에서 띄웁니다. 읽기 명령어는 항상 안전하며, 유일한 파괴적 명령어(`clear-data`)는 명시적인 `--yes` 없이는 실행을 거부합니다. 출력은 완전한 터미널 UI입니다 — 오른쪽 정렬된 숫자 컬럼을 가진 박스 드로잉 테이블, 상태 아이콘(`● active`, `○ waiting`, `✔ completed`, `✖ error`), stats/analytics/cost용 인라인 막대 차트, 그리고 실제 `├─`/`└─` 에이전트 트리 — ANSI 색상은 TTY에서 자동 활성화되고 파이프될 때는 꺼지며 `--no-color` / `NO_COLOR` / `FORCE_COLOR`로 제어할 수 있습니다. 지속적인 모니터링을 위해 **`ccam repl`**(별칭 `shell` / `i`)은 `ccam` 접두사 없이 명령어를 입력하는 대화형 셸을 엽니다 — CCAM 환영 배너, Tab 자동 완성, 저장되는 방향키 히스토리, 실시간 서버 상태 프롬프트(`● host` 실행 중 / `○ offline` 중지), 그룹화된 `help` / `help <cmd>` 메뉴, 그리고 아무 명령이나 자동 새로고침하는 `watch [초] <명령>` 내장 기능(예: `watch 5 kanban`)을 제공합니다. 각 줄은 격리된 자식 프로세스로 실행되므로 오프라인 거부나 블로킹되는 `tail`이 셸을 종료시키는 일은 없습니다. `ccam`이 PATH에 없다면(예: `npm link`에 상승된 권한이 필요했던 경우) 저장소 루트에서 `npm link`를 한 번 실행하십시오. 전체 참조 — 플래그, 발견 순서, REPL, 안전 모델, 스크립팅/종료 코드, 문제 해결 — 는 [docs/CLI.md](./docs/CLI.md)에서 확인할 수 있습니다.
+모든 명령 그룹은 기본적으로 목록을 보여 주며(`ccam alerts` ≡ `ccam alerts list`), 모든 명령이 `--help`를 지원하고, `ccam commands`는 전체 명령 트리를 출력합니다. 출력은 사람**과** 기계 모두를 위해 설계되었습니다. TTY에서는 완전한 터미널 UI(박스 표, 상태 아이콘, 막대 차트, 스파크라인, `├─`/`└─` 에이전트 트리, 채팅 로그 형식의 대화 보기, 컬러 도움말)를, 파이프 출력은 일반 텍스트를 제공하며, 모든 명령에 **`--json`**(또는 `CCAM_OUTPUT=json`)을 붙이면 안정적인 JSON — `tail` / `stream` / `run follow`는 NDJSON — 을 출력하고, 오류는 stderr에 `{"error":{"code","message"}}`로, 종료 코드는 `0`/`1`입니다. `ccam commands --json`은 에이전트를 위해 모든 명령, 인수, 옵션의 스키마를 내보냅니다. 쓰기 작업은 확인이 필요합니다: `--yes`, 또는 터미널에서 대화형 `y/N`(비대화형 셸은 반드시 `--yes` 전달); `clear-data`는 항상 문자 그대로의 `--yes`가 필요합니다. 서버가 꺼져 있으면 **읽기 전용 명령은 `data/dashboard.db`를 직접 읽는 방식으로 폴백**하며(`⚠ Offline mode` 배너와 함께, 종료된 `active` 세션은 서버의 프로세스 생존 프로브로 표시 단계에서 보정), 서버 전용 명령은 이유와 함께 `○ Dashboard server is NOT running` 표시기를 출력합니다. **`ccam repl`**은 CCAM 배너, 실제 명령 트리 기반 Tab 자동 완성, 영구 기록, 실시간 상태 프롬프트, `help <cmd>`, `json` 및 `watch [secs] <cmd>` 내장 명령을 갖춘 대화형 셸이며, 각 줄은 격리된 자식 프로세스로 실행됩니다. 셸 자동 완성: `source <(ccam completion zsh)`. `ccam`이 PATH에 없다면 저장소 루트에서 `npm link`를 한 번 실행하세요. 전체 레퍼런스는 [docs/CLI.md](./docs/CLI.md)에 있습니다.
 
 ## npm 스크립트
 

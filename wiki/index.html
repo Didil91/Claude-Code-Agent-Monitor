@@ -872,6 +872,7 @@
                 <span class="tech-badge badge-ws">Remote data sources</span>
                 <span class="tech-badge badge-openapi">SSH tunnel federation</span>
                 <span class="tech-badge badge-ts">ccam CLI</span>
+                <span class="tech-badge badge-node">Commander CLI</span>
                 <span class="tech-badge badge-react">Data scope (local/all/selected)</span>
                 <span class="tech-badge badge-express">Import history</span>
                 <span class="tech-badge badge-github">File-header PR CI</span>
@@ -949,6 +950,7 @@
                 <span class="tech-badge badge-ws">Remote data sources</span>
                 <span class="tech-badge badge-openapi">SSH tunnel federation</span>
                 <span class="tech-badge badge-ts">ccam CLI</span>
+                <span class="tech-badge badge-node">Commander CLI</span>
                 <span class="tech-badge badge-react">Data scope (local/all/selected)</span>
                 <span class="tech-badge badge-express">Import history</span>
                 <span class="tech-badge badge-github">File-header PR CI</span>
@@ -1437,15 +1439,14 @@
                   <div class="feature-icon ic-cyan">⌨️</div>
                   <h3 id="feat-ccam-cli">ccam CLI</h3>
                   <p>
-                    The whole dashboard as terminal commands — <code>ccam stats</code>,
-                    <code>kanban</code>, <code>tail</code>, <code>session &lt;id&gt;</code>,
-                    <code>analytics</code>, <code>alerts</code>, <code>pricing</code>,
-                    <code>import</code>, <code>doctor</code>, <code>export</code> and more.
-                    Zero dependencies, linked by <code>npm run setup</code>, auto-discovers the
-                    running server, renders a full terminal UI (box-drawn tables, status icons,
-                    inline bar charts, agent trees), and pipes cleanly (colors off when not a
-                    TTY). The one
-                    destructive command is gated behind <code>--yes</code>.
+                    The whole dashboard as terminal commands, built on Commander.js — a nested
+                    tree like <code>ccam sessions transcript &lt;id&gt;</code>,
+                    <code>alerts ack</code>, or <code>pricing gpt set</code>, plus a live
+                    <code>overview</code>, a WebSocket <code>stream</code>, and a REPL. It renders a
+                    full terminal UI on a TTY, prints plain text when piped, and gives agents
+                    <code>--json</code> on every command with JSON errors and a
+                    <code>commands --json</code> schema. Writes ask to confirm; shell completion
+                    ships built in.
                   </p>
                 </div>
                 <div class="feature-card">
@@ -2454,16 +2455,26 @@ npm run mcp:start:repl         # interactive CLI with tab completion</code></pre
           <h2>ccam CLI</h2>
           <p>
             The full dashboard feature surface is also available from any terminal through the
-            dependency-free <code>ccam</code> CLI (<code>bin/ccam.js</code>). It is linked
+            <code>ccam</code> CLI (<code>bin/ccam.js</code> → <code>cli/</code>), built on
+            Commander.js — the Node analogue of Go's Cobra: a nested command tree with grouped
+            help at every level, inherited global options, and validated flags. It is linked
             automatically by <code>npm run setup</code> (via a fail-soft <code>npm link</code>),
-            discovers the running server through the same
-            <code>~/.claude/.agent-dashboard.json</code> registry the hook handler uses
-            (override with <code>CLAUDE_DASHBOARD_PORT</code> / <code>DASHBOARD_PORT</code>),
-            and renders a full terminal UI — box-drawn tables, status icons, inline bar
-            charts, and agent trees — that degrades to plain text when piped
-            (<code>--no-color</code> / <code>NO_COLOR</code> / <code>FORCE_COLOR</code>
-            respected), so it is equally at home in an interactive shell,
-            <code>grep</code> pipelines, or CI.
+            targets <code>--server</code> / <code>CCAM_URL</code> or discovers the running server
+            through the same <code>~/.claude/.agent-dashboard.json</code> registry the hook
+            handler uses (override with <code>CLAUDE_DASHBOARD_PORT</code> /
+            <code>DASHBOARD_PORT</code>), and renders a full terminal UI — box-drawn tables,
+            status icons, bar charts, sparklines, and agent trees — that degrades to plain text
+            when piped (<code>--no-color</code> / <code>NO_COLOR</code> /
+            <code>FORCE_COLOR</code> respected).
+          </p>
+          <p>
+            It is built for machines as well as people: <code>--json</code> (or
+            <code>CCAM_OUTPUT=json</code>) on any command prints stable JSON — NDJSON for
+            <code>tail</code>, <code>stream</code>, and <code>run follow</code> — with errors as
+            <code>{"error":{"code","message"}}</code> on stderr and exit codes 0 / 1, while
+            <code>ccam commands --json</code> describes every command, argument, and option.
+            <code>ccam completion bash|zsh|fish</code> prints a Cobra-style completion script
+            driven by the live command tree.
           </p>
           <p>
             For a live monitoring session, <code>ccam repl</code> (aliases
@@ -2498,18 +2509,20 @@ npm run mcp:start:repl         # interactive CLI with tab completion</code></pre
                 </tr>
                 <tr>
                   <td>Monitoring</td>
-                  <td><code>health</code> · <code>stats</code> · <code>kanban</code> · <code>tail</code></td>
+                  <td><code>overview</code> · <code>stats</code> · <code>kanban</code> · <code>tail</code> · <code>stream</code> · <code>watch</code></td>
                   <td>
-                    Reachability, totals and status distributions, the Kanban board rendered as
-                    text columns, and a live event feed that polls for new rows every 2 seconds
+                    A one-screen live snapshot, totals and status distributions, the Kanban board
+                    as text lanes, a polling event feed, the raw real-time WebSocket feed, and a
+                    <code>watch</code> that re-runs any command on an interval
                   </td>
                 </tr>
                 <tr>
                   <td>Data</td>
-                  <td><code>sessions</code> · <code>session &lt;id&gt;</code> · <code>agents</code> · <code>events</code></td>
+                  <td><code>sessions</code> · <code>sessions get/stats/transcript</code> · <code>agents</code> · <code>events</code></td>
                   <td>
                     Filterable tables plus a per-session deep dive with an indented agent tree,
-                    per-session cost, and the most recent events
+                    per-session cost, stats, the conversation as a readable chat log, and rename /
+                    update writes
                   </td>
                 </tr>
                 <tr>
@@ -2534,7 +2547,7 @@ npm run mcp:start:repl         # interactive CLI with tab completion</code></pre
                 </tr>
                 <tr>
                   <td>Pricing</td>
-                  <td><code>pricing</code> · <code>pricing set / delete / reset</code></td>
+                  <td><code>pricing</code> · <code>pricing set / delete / reset</code> · <code>pricing gpt / cursor</code></td>
                   <td>
                     Full pricing-rule CRUD with per-mtok rates — including 1-hour cache-write,
                     fast-tier, and time-limited intro rates — straight from the terminal, with
@@ -2583,8 +2596,8 @@ npm run mcp:start:repl         # interactive CLI with tab completion</code></pre
             <div class="callout-body">
               <strong>Safe by default</strong>
               <p>
-                Read commands only issue GETs; mutating commands map one-to-one to explicit
-                dashboard actions; and the single destructive command,
+                Read commands only issue GETs; writes ask for confirmation on a terminal and
+                require <code>--yes</code> in scripts; and the single destructive command,
                 <code>clear-data</code>, always refuses to run without an explicit
                 <code>--yes</code> flag. Exit codes are script-friendly: 0 on success, 1 on any
                 failure. See <code>docs/CLI.md</code> for the complete reference.
@@ -7225,7 +7238,7 @@ npm run install-hooks</code></pre>
     <!-- Body-content translations — must load before script.js so the
          i18n engine sees window.__WIKI_CONTENT_I18N. Both are deferred, so they
          run in document order. -->
-    <script src="i18n-content.js?v=104" defer></script>
+    <script src="i18n-content.js?v=106" defer></script>
     <script src="script.js?v=59" defer></script>
     <script>
       (function () {
