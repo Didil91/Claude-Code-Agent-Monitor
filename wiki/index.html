@@ -2471,7 +2471,7 @@ npm run mcp:start:repl         # interactive CLI with tab completion</code></pre
             It is built for machines as well as people: <code>--json</code> (or
             <code>CCAM_OUTPUT=json</code>) on any command prints stable JSON — NDJSON for
             <code>tail</code>, <code>stream</code>, and <code>run follow</code> — with errors as
-            <code>{"error":{"code","message"}}</code> on stderr and exit codes 0 / 1, while
+            <code>{"error":{"code":"…","message":"…"}}</code> on stderr and exit codes 0 / 1, while
             <code>ccam commands --json</code> describes every command, argument, and option.
             <code>ccam completion bash|zsh|fish</code> prints a Cobra-style completion script
             driven by the live command tree.
@@ -2596,12 +2596,7 @@ npm run mcp:start:repl         # interactive CLI with tab completion</code></pre
             <div class="callout-body">
               <strong>Safe by default</strong>
               <p>
-                Read commands only issue GETs; writes ask for confirmation on a terminal and
-                require <code>--yes</code> in scripts; and the single destructive command,
-                <code>clear-data</code>, always refuses to run without an explicit
-                <code>--yes</code> flag. Exit codes are script-friendly: 0 on success, 1 on any
-                failure. See <code>docs/CLI.md</code> for the complete reference.
-              </p>
+                Read commands only issue GETs; writes ask for confirmation on a terminal and require <code>--yes</code> in scripts; and <code>clear-data</code>, which wipes every session, always refuses to run without an explicit <code>--yes</code> flag. Exit codes are script-friendly: 0 on success, 1 on any failure. See <code>docs/CLI.md</code> for the complete reference. </p>
             </div>
           </div>
         </section>
@@ -7238,7 +7233,7 @@ npm run install-hooks</code></pre>
     <!-- Body-content translations — must load before script.js so the
          i18n engine sees window.__WIKI_CONTENT_I18N. Both are deferred, so they
          run in document order. -->
-    <script src="i18n-content.js?v=106" defer></script>
+    <script src="i18n-content.js?v=107" defer></script>
     <script src="script.js?v=59" defer></script>
     <script>
       (function () {

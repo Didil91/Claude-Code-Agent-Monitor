@@ -241,7 +241,11 @@ async function updateRemote({ args, opts }) {
   console.log(`${c.green("✔")} Updated remote source ${r.source.id}`);
 }
 
-async function toggleRemote(id, enabled) {
+async function toggleRemote(id, enabled, opts) {
+  await confirm(opts, {
+    prompt: `${enabled ? "Enable" : "Disable"} auto-sync for remote source ${id}?`,
+    refusal: "remote-sources enable/disable requires --yes.",
+  });
   const r = await patch(`/api/remote-sources/${enc(id)}`, { enabled });
   if (isJson()) return printJson(r);
   console.log(
@@ -400,12 +404,18 @@ function register(program) {
     .command("enable")
     .description("Turn auto-sync on")
     .argument("<id>", "source id")
-    .action(run(({ args }) => toggleRemote(args[0], true), { serverOnly: REMOTE_ONLY }));
+    .option("-y, --yes", "confirm the change")
+    .action(
+      run(({ args, opts }) => toggleRemote(args[0], true, opts), { serverOnly: REMOTE_ONLY })
+    );
   remotes
     .command("disable")
     .description("Turn auto-sync off")
     .argument("<id>", "source id")
-    .action(run(({ args }) => toggleRemote(args[0], false), { serverOnly: REMOTE_ONLY }));
+    .option("-y, --yes", "confirm the change")
+    .action(
+      run(({ args, opts }) => toggleRemote(args[0], false, opts), { serverOnly: REMOTE_ONLY })
+    );
   remotes
     .command("test")
     .description("Probe SSH connectivity and provider paths (exit 1 on failure)")

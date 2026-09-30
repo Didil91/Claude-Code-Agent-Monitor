@@ -230,8 +230,9 @@ async function startRepl(program) {
   let childActive = false;
   const sigintNoop = () => {};
   process.on("SIGINT", sigintNoop);
+  let watching = false;
   rl.on("SIGINT", () => {
-    if (childActive) return;
+    if (childActive || watching) return;
     console.log(c.dim("  (type exit or press Ctrl+D to quit)"));
     renderPrompt();
   });
@@ -281,7 +282,12 @@ async function startRepl(program) {
     const onSig = () => {
       abort = true;
     };
+    // Ctrl+C during a child arrives as a real SIGINT (raw mode is off); during
+    // the wait between runs the terminal is back in raw mode, so it arrives
+    // as readline's SIGINT event instead — listen on both.
     process.prependListener("SIGINT", onSig);
+    rl.on("SIGINT", onSig);
+    watching = true;
     try {
       while (!abort) {
         if (isTty) process.stdout.write("\x1b[2J\x1b[H");
@@ -293,20 +299,19 @@ async function startRepl(program) {
         await runChild(argv);
         if (abort) break;
         await new Promise((r) => {
-          const poll = setInterval(() => {
-            if (abort) {
-              clearInterval(poll);
-              r();
-            }
-          }, 100);
-          setTimeout(() => {
+          const done = () => {
             clearInterval(poll);
+            clearTimeout(timer);
             r();
-          }, intervalMs);
+          };
+          const poll = setInterval(() => abort && done(), 100);
+          const timer = setTimeout(done, intervalMs);
         });
       }
     } finally {
+      watching = false;
       process.removeListener("SIGINT", onSig);
+      rl.removeListener("SIGINT", onSig);
     }
   }
 

@@ -68,17 +68,22 @@ function offlinePricing() {
 
 async function setPricing({ args, opts }) {
   const pattern = args[0];
+  // Partial edits keep the rule's current values: an omitted flag falls back
+  // to the existing row, and only a brand-new rule defaults a rate to 0.
+  const existing =
+    ((await get("/api/pricing")).pricing || []).find((p) => p.model_pattern === pattern) || {};
+  const pick = (flag, field) => opts[flag] ?? existing[field] ?? 0;
   const body = {
     model_pattern: pattern,
-    display_name: opts.name || pattern,
-    input_per_mtok: opts.input ?? 0,
-    output_per_mtok: opts.output ?? 0,
-    cache_read_per_mtok: opts.cacheRead ?? 0,
-    cache_write_per_mtok: opts.cacheWrite ?? 0,
+    display_name: opts.name || existing.display_name || pattern,
+    input_per_mtok: pick("input", "input_per_mtok"),
+    output_per_mtok: pick("output", "output_per_mtok"),
+    cache_read_per_mtok: pick("cacheRead", "cache_read_per_mtok"),
+    cache_write_per_mtok: pick("cacheWrite", "cache_write_per_mtok"),
+    cache_write_1h_per_mtok: pick("cacheWrite1h", "cache_write_1h_per_mtok"),
+    fast_input_per_mtok: pick("fastInput", "fast_input_per_mtok"),
+    fast_output_per_mtok: pick("fastOutput", "fast_output_per_mtok"),
   };
-  if (opts.cacheWrite1h !== undefined) body.cache_write_1h_per_mtok = opts.cacheWrite1h;
-  if (opts.fastInput !== undefined) body.fast_input_per_mtok = opts.fastInput;
-  if (opts.fastOutput !== undefined) body.fast_output_per_mtok = opts.fastOutput;
   // The intro block is only sent when at least one --intro-* flag is present:
   // per the API contract, a PUT that omits every intro field preserves an
   // existing promo, so a plain rate edit can never clobber one.
@@ -92,9 +97,15 @@ async function setPricing({ args, opts }) {
   const introProvided =
     opts.introUntil !== undefined || Object.keys(INTRO).some((k) => opts[k] !== undefined);
   if (introProvided) {
-    for (const [k, field] of Object.entries(INTRO)) body[field] = opts[k] ?? 0;
-    // A bare --intro-until (no date) clears the promo, mirroring the API.
-    body.intro_until = typeof opts.introUntil === "string" ? opts.introUntil : "";
+    for (const [k, field] of Object.entries(INTRO)) body[field] = pick(k, field);
+    // A bare --intro-until (no date) clears the promo, mirroring the API;
+    // omitting it keeps the current end date.
+    body.intro_until =
+      typeof opts.introUntil === "string"
+        ? opts.introUntil
+        : opts.introUntil === true
+          ? ""
+          : existing.intro_until || "";
   }
   const r = await put("/api/pricing", body);
   if (isJson()) return printJson(r);

@@ -130,7 +130,7 @@ API-backed commands need the server. When it isn't running, each prints the same
 | `ccam status` | Up/down indicator (`●` running / `○` not running); exits `1` when down |
 | `ccam health` | One-line reachability check with version, URL, and server timestamp |
 | `ccam start [--port N]` | Start the production server **in the background** (detached), wait up to 30 s for `/api/health`, print URL + PID. Logs append to `data/ccam-server.log`. No-ops when already up. Requires a built client (`npm run build` once) |
-| `ccam stop` | Stop the server this CLI targets: PID from the discovery file, `SIGTERM`, escalating to `SIGKILL` after 5 s |
+| `ccam stop` | Stop the server this CLI targets: the PID registered for its port in the discovery file, `SIGTERM`, escalating to `SIGKILL` after 5 s. Refuses a non-local `--server` target, and refuses to guess when several dashboards are registered but none on that port |
 | `ccam restart [--port N]` | `stop` (if running) then `start` |
 | `ccam logs [-n N] [-f]` | Print the last `N` lines (default 50) of `data/ccam-server.log`; `-f` follows it |
 | `ccam open [page] [--session id] [--print]` | Open the dashboard, a page (`dashboard`, `kanban`, `sessions`, `activity`, `analytics`, `workflows`, `config`, `run`, `settings`), or a session's detail page; `--print` only prints the URL |
@@ -254,7 +254,7 @@ All rule and webhook writes are [confirmed](#safety-model).
 | Command | Description |
 | ------- | ----------- |
 | `ccam pricing [list]` | Claude rules incl. **Fast In/Out** and **Intro In/Out** columns |
-| `ccam pricing set <pattern> --input N --output N [--cache-read] [--cache-write] [--cache-write-1h] [--fast-input] [--fast-output] [--intro-* …] [--intro-until [date]] [--name]` | Create/update a rule. Intro fields are only sent when an `--intro-*` flag is present (a plain edit never clobbers a promo); bare `--intro-until` clears it |
+| `ccam pricing set <pattern> --input N --output N [--cache-read] [--cache-write] [--cache-write-1h] [--fast-input] [--fast-output] [--intro-* …] [--intro-until [date]] [--name]` | Create/update a rule. **Omitted flags keep the rule's current values** (a new rule defaults them to 0). Intro fields are only sent when an `--intro-*` flag is present (a plain edit never clobbers a promo); bare `--intro-until` clears it |
 | `ccam pricing delete <pattern>` | Delete a rule |
 | `ccam pricing reset --yes` | Restore the shipped defaults (confirmed — replaces custom rules) |
 | `ccam pricing gpt [list]` · `pricing gpt set <pattern> [--input] [--cached-input] [--cache-write] [--output] [--long-*] [--fast-*] [--data JSON]` · `pricing gpt delete <pattern>` | OpenAI/Codex rate card. `set` **merges flags onto the existing row**, so a partial edit never zeroes other rates |
@@ -282,7 +282,7 @@ SSH machines whose Claude Code / Codex history the dashboard mirrors (Settings �
 | `ccam remote-sources get <id\|prefix\|label>` | Detail incl. provider homes and last error |
 | `ccam remote-sources add --label N --host user@host [--port] [--identity] [--remote-home] [--remote-codex-home] [--disabled]` | Add a source |
 | `ccam remote-sources update <id> [field flags \| --data JSON] --yes` | Partial update |
-| `ccam remote-sources enable\|disable <id>` | Toggle auto-sync |
+| `ccam remote-sources enable\|disable <id>` | Toggle auto-sync (confirmed) |
 | `ccam remote-sources test <id>` | Probe SSH + provider paths; exits `1` on failure |
 | `ccam remote-sources sync [id]` | Pull now — one source, or every source (failures isolated) |
 | `ccam remote-sources rm <id> [--purge --confirm PURGE_REMOTE_SOURCE_DATA]` | Remove (data kept unless purged) |
@@ -330,8 +330,8 @@ ccam completion fish > ~/.config/fish/completions/ccam.fish     # fish
 ## Safety Model
 
 - **Read commands are always safe** — they only issue `GET`s.
-- **Writes are confirmed.** Session/agent writes, alert-rule and webhook writes, rate-card writes, `pricing reset`, remote-source updates, run start/send/stop, hook install, config writes, `home set`, and push subscriptions pass with `-y/--yes`; on an interactive terminal they instead ask `? … [y/N]`. Non-interactive shells (scripts, CI, agents) **must** pass `--yes` — the refusal is `CONFIRMATION_REQUIRED`.
-- Established one-shot mutations keep their historical behavior without a prompt (`pricing set/delete`, `alerts ack/ack-all`, `cleanup`, `remote-sources add/sync/enable/disable`).
+- **Writes are confirmed.** Session/agent writes, alert-rule and webhook writes, rate-card writes, `pricing reset`, remote-source updates and enable/disable, run start/send/stop, hook install, config writes, `home set`, and push subscriptions pass with `-y/--yes`; on an interactive terminal they instead ask `? … [y/N]`. Non-interactive shells (scripts, CI, agents) **must** pass `--yes` — the refusal is `CONFIRMATION_REQUIRED`.
+- Established one-shot mutations keep their historical behavior without a prompt (`pricing set/delete`, `alerts ack/ack-all`, `cleanup`, `remote-sources add/sync`).
 - `clear-data` requires a literal `--yes` (never prompts); the generic `api` route to it additionally requires `--confirm CLEAR_ALL_DATA`.
 - Remote-source removal keeps imported data unless `--purge --confirm PURGE_REMOTE_SOURCE_DATA`.
 - Webhook tests, push sends, and run launches are real side effects.
@@ -351,7 +351,7 @@ Human output is a full terminal UI: box-drawn tables (right-aligned numbers, ter
 ## Machine-Readable Contract (Agents)
 
 - `--json` (or `CCAM_OUTPUT=json`) on **every** command prints one pretty-printed JSON document on stdout — the API payload for reads, the API response for writes. Streaming commands (`tail`, `stream`, `run follow`) emit **NDJSON**, one object per line.
-- **Errors** in JSON mode are one line on stderr: `{"error":{"code":"…","message":"…","hints":[…]}}`. Stable codes include `UNKNOWN_COMMAND`, `UNKNOWN_OPTION`, `MISSING_ARGUMENT`, `INVALID_ARGUMENT`, `USAGE`, `CONFIRMATION_REQUIRED`, `SERVER_DOWN` (with `url` and the server-only `reason`), `NOT_FOUND`, and `HTTP_<status>` / the API's own code (with `status`). Offline fallbacks add a `{"warning":{"code":"OFFLINE",…}}` line on stderr.
+- **Errors** in JSON mode are one line on stderr: `{"error":{"code":"…","message":"…","hints":[…]}}`. Stable codes include `UNKNOWN_COMMAND`, `UNKNOWN_OPTION`, `MISSING_ARGUMENT`, `INVALID_ARGUMENT`, `USAGE`, `CONFIRMATION_REQUIRED`, `SERVER_DOWN`, `TIMEOUT` (reachable but too slow — no offline fallback) (with `url` and the server-only `reason`), `NOT_FOUND`, and `HTTP_<status>` / the API's own code (with `status`). Offline fallbacks add a `{"warning":{"code":"OFFLINE",…}}` line on stderr.
 - **Exit codes**: `0` success; `1` any failure (unreachable server, API error, usage error, refused confirmation, failed `webhooks test` / `remote-sources test`, `doctor` failure).
 - `ccam commands --json` describes every command, alias, argument (required/variadic/choices), and option (flags, value, choices, default) — enough for an agent to construct any invocation without scraping help text.
 - Never prompts when stdin/stdout are not a TTY; pass `--yes` for writes.

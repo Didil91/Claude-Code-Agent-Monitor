@@ -357,12 +357,16 @@ async function cmdStream({ opts }) {
   }
   await get("/api/health"); // route offline messaging before connecting
   const wsUrl = new URL("/ws", baseUrl().replace(/^http/, "ws"));
+  // Send the token as a header (accepted by the /ws upgrade check) rather
+  // than a query parameter, which would land in proxy and access logs.
   const token = apiToken();
-  if (token) wsUrl.searchParams.set("token", token);
   const types = opts.type ? new Set(opts.type) : null;
   let count = 0;
   await new Promise((resolve, reject) => {
-    const ws = new WebSocket(wsUrl.toString());
+    const ws = new WebSocket(
+      wsUrl.toString(),
+      token ? { headers: { "x-dashboard-token": token } } : undefined
+    );
     ws.on("open", () => {
       if (!isJson())
         console.log(

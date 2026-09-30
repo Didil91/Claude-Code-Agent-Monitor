@@ -49,7 +49,7 @@ falling back to http://127.0.0.1:4820.
 ${c.bold("Output:")} colors auto-enable on a TTY and turn off when piped.
 Disable with --no-color or NO_COLOR=1; force with FORCE_COLOR=1 / CCAM_COLOR=1.
 ${c.bold("Automation:")} add --json (or set CCAM_OUTPUT=json) for stable JSON on stdout and
-{"error":{"code","message"}} on stderr; exit 0 = success, 1 = failure.
+{"error":{"code":"…","message":"…"}} on stderr; exit 0 = success, 1 = failure.
 \`ccam commands --json\` describes every command, argument, and option.
 
 ${c.bold("Note:")} ccam talks to the local dashboard server — API-backed commands

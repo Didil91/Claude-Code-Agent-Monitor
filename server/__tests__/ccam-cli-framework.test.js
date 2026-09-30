@@ -300,6 +300,30 @@ describe("ccam framework — JSON for agents", () => {
   });
 });
 
+describe("ccam framework — HTTP client", () => {
+  it("a slow server is a TIMEOUT error, not a server-down fallback", async () => {
+    const http = require("http");
+    const { state, CliError, ServerDownError } = require("../../cli/lib/runtime");
+    const { get } = require("../../cli/lib/http");
+    const hang = http.createServer(() => {}); // accepts, never answers
+    await new Promise((r) => hang.listen(0, "127.0.0.1", r));
+    const previous = state.url;
+    state.url = `http://127.0.0.1:${hang.address().port}`;
+    try {
+      await assert.rejects(get("/api/health", { timeoutMs: 150 }), (err) => {
+        assert.ok(err instanceof CliError);
+        assert.ok(!(err instanceof ServerDownError));
+        assert.equal(err.code, "TIMEOUT");
+        return true;
+      });
+    } finally {
+      state.url = previous;
+      hang.closeAllConnections();
+      hang.close();
+    }
+  });
+});
+
 // ── Human UX ────────────────────────────────────────────────────────────────
 
 describe("ccam framework — help, usage errors, completion", () => {
@@ -471,6 +495,29 @@ describe("ccam framework — pricing rate cards, remotes, admin", () => {
     assert.equal((await ccam("pricing", "gpt", "delete", "fw-gpt%", "--yes")).code, 0);
   });
 
+  it("pricing set keeps the rule's other rates on a partial edit", async () => {
+    const created = await ccam(
+      "pricing",
+      "set",
+      "fw-claude%",
+      "--input",
+      "3",
+      "--output",
+      "15",
+      "--fast-input",
+      "6",
+      "--fast-output",
+      "30"
+    );
+    assert.equal(created.code, 0, created.err);
+    assert.equal((await ccam("pricing", "set", "fw-claude%", "--input", "4")).code, 0);
+    const row = db.prepare("SELECT * FROM model_pricing WHERE model_pattern = ?").get("fw-claude%");
+    assert.equal(row.input_per_mtok, 4); // updated
+    assert.equal(row.output_per_mtok, 15); // preserved
+    assert.equal(row.fast_input_per_mtok, 6); // preserved
+    assert.equal((await ccam("pricing", "delete", "fw-claude%")).code, 0);
+  });
+
   it("pricing cursor lists the Cursor rate card", async () => {
     const { code, out } = await ccam("pricing", "cursor", "--json");
     assert.equal(code, 0);
@@ -495,9 +542,12 @@ describe("ccam framework — pricing rate cards, remotes, admin", () => {
       "--json"
     );
     const id = JSON.parse(added.out).source.id;
-    assert.equal((await ccam("remote-sources", "enable", id)).code, 0);
+    const refused = await ccam("remote-sources", "enable", id);
+    assert.equal(refused.code, 1);
+    assert.match(refused.err, /requires --yes/);
+    assert.equal((await ccam("remote-sources", "enable", id, "--yes")).code, 0);
     assert.equal(db.prepare("SELECT enabled FROM remote_sources WHERE id = ?").get(id).enabled, 1);
-    assert.equal((await ccam("remote-sources", "disable", id)).code, 0);
+    assert.equal((await ccam("remote-sources", "disable", id, "--yes")).code, 0);
     assert.match((await ccam("remote-sources", "get", "FW box")).out, /fw@box/);
     assert.equal((await ccam("remote-sources", "rm", id)).code, 0);
   });

@@ -153,19 +153,50 @@ async function stopServer() {
     path.join(REPO_ROOT, "server", "lib", "server-info.js")
   );
   const serverInfoPath = getServerInfoPath();
-  const envPort = Number(process.env.CLAUDE_DASHBOARD_PORT || process.env.DASHBOARD_PORT);
-  const targetPort = Number.isFinite(envPort) && envPort > 0 ? envPort : resolveDashboardPort();
+  // Target the exact port this CLI talks to (the one baseUrl() resolves —
+  // --server / CCAM_URL, env port, or discovery). A non-local target cannot
+  // be stopped by signalling a local PID.
+  let target;
+  try {
+    target = new URL(baseUrl());
+  } catch {
+    target = null;
+  }
+  if (target && !["127.0.0.1", "localhost", "[::1]", "::1"].includes(target.hostname)) {
+    throw new CliError(
+      `Refusing to stop ${target.origin}: only a local dashboard can be stopped.`,
+      {
+        code: "NOT_LOCAL",
+      }
+    );
+  }
+  const urlPort = target && target.port ? Number(target.port) : NaN;
+  const targetPort = Number.isInteger(urlPort) && urlPort > 0 ? urlPort : resolveDashboardPort();
   let pid;
+  let ambiguous = false;
   try {
     const parsed = JSON.parse(fs.readFileSync(serverInfoPath, "utf8"));
     if (Array.isArray(parsed.servers) && parsed.servers.length > 0) {
       const match = parsed.servers.find((s) => s.port === targetPort);
-      pid = match ? match.pid : parsed.servers[0].pid;
+      // With several registered servers and none on our port, guessing could
+      // signal an unrelated process — refuse instead.
+      if (match) pid = match.pid;
+      else if (parsed.servers.length === 1) pid = parsed.servers[0].pid;
+      else ambiguous = true;
     } else if (parsed.pid) {
       pid = parsed.pid;
     }
   } catch {
     // fall through
+  }
+  if (ambiguous) {
+    throw new CliError(
+      `No registered dashboard on port ${targetPort} in ${serverInfoPath} (several others are).`,
+      {
+        code: "PID_AMBIGUOUS",
+        hints: ["Target one explicitly: DASHBOARD_PORT=<port> ccam stop"],
+      }
+    );
   }
   if (!Number.isSafeInteger(pid) || pid <= 0) {
     throw new CliError(`Could not determine server PID from ${serverInfoPath}`, {

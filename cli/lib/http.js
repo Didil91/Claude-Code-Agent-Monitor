@@ -14,7 +14,7 @@
 "use strict";
 
 const path = require("node:path");
-const { REPO_ROOT, state, ApiError, ServerDownError } = require("./runtime");
+const { REPO_ROOT, state, ApiError, CliError, ServerDownError } = require("./runtime");
 
 /** Resolve the dashboard base URL (no trailing slash). */
 function baseUrl() {
@@ -44,9 +44,21 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/** An AbortSignal.timeout() rejection — the server answered too slowly,
+ *  which is not the same as it being down (no offline fallback applies). */
+const isTimeout = (err) => err?.name === "TimeoutError";
+
+function timeoutError(method, pathname, timeoutMs) {
+  return new CliError(`${method} ${pathname} timed out after ${Math.round(timeoutMs / 1000)} s`, {
+    code: "TIMEOUT",
+    hints: ["The server is reachable but slow to respond — retry, or check `ccam logs`."],
+  });
+}
+
 /**
- * Low-level fetch against the dashboard. Network failures (nothing listening,
- * DNS, timeout) become ServerDownError; HTTP errors are returned to the caller.
+ * Low-level fetch against the dashboard. A timeout becomes a TIMEOUT
+ * CliError; any other network failure (nothing listening, DNS, reset) becomes
+ * ServerDownError; HTTP errors are returned to the caller.
  */
 async function rawFetch(pathname, init = {}, timeoutMs = 30_000) {
   try {
@@ -55,7 +67,8 @@ async function rawFetch(pathname, init = {}, timeoutMs = 30_000) {
       headers: { ...authHeaders(), ...(init.headers || {}) },
       signal: AbortSignal.timeout(timeoutMs),
     });
-  } catch {
+  } catch (err) {
+    if (isTimeout(err)) throw timeoutError(init.method || "GET", pathname, timeoutMs);
     throw new ServerDownError();
   }
 }
@@ -85,7 +98,14 @@ async function api(method, pathname, body, { timeoutMs = 30_000 } = {}) {
     },
     timeoutMs
   );
-  const data = await readBody(res);
+  let data;
+  try {
+    data = await readBody(res);
+  } catch (err) {
+    // The timeout signal also covers streaming the body.
+    if (isTimeout(err)) throw timeoutError(method, pathname, timeoutMs);
+    throw err;
+  }
   if (!res.ok) throw new ApiError(method, pathname, res.status, data);
   return data;
 }

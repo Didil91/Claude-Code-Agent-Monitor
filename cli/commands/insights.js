@@ -329,6 +329,18 @@ async function followRun({ args, opts }) {
     const r = await get(`/api/run/${enc(id)}?envelopes=1`);
     const envs = r.envelopes || [];
     const total = r.envelopeCount ?? envs.length;
+    // The server keeps only the most recent envelopes in memory; if more
+    // arrived since the last poll than it still holds, say how many we lost.
+    const missed = first ? 0 : total - seen - envs.length;
+    if (missed > 0) {
+      if (isJson()) {
+        process.stderr.write(
+          `${JSON.stringify({ warning: { code: "ENVELOPES_MISSED", missed } })}\n`
+        );
+      } else {
+        console.log(c.yellow(`⚠ ${missed} envelope(s) were evicted before they could be shown`));
+      }
+    }
     const fresh = first
       ? envs.slice(Math.max(0, envs.length - (opts.backlog ?? 20)))
       : envs.slice(Math.max(0, envs.length - (total - seen)));
