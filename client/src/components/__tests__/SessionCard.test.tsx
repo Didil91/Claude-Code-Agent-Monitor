@@ -104,4 +104,18 @@ describe("SessionCard", () => {
     expect(screen.getByTestId("location")).toHaveTextContent("/kanban");
     expect(container.querySelector(".card-hover")?.className).toContain("cursor-default");
   });
+
+  it("clamps long titles to three lines and can render status as a dot", () => {
+    const name = "A very long session title ".repeat(8).trim();
+    const { container } = render(
+      <MemoryRouter>
+        <SessionCard session={makeSession({ name })} statusDisplay="dot" />
+      </MemoryRouter>
+    );
+    const title = screen.getByText(name);
+    expect(title.className).toContain("line-clamp-3");
+    expect(title).toHaveAttribute("title", name);
+    expect(container.querySelector("[data-status-dot]")).not.toBeNull();
+    expect(container.querySelector(".badge")).toBeNull();
+  });
 });

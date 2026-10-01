@@ -74,6 +74,9 @@ import { formatDuration, timeAgo, formatModelName } from "../lib/format";
 interface SessionCardProps {
   session: Session;
   onClick?: () => void;
+  /** `dot` shrinks the status badge to its colored dot where the layout
+   *  already shows the status (Kanban columns). Defaults to the full badge. */
+  statusDisplay?: "badge" | "dot";
 }
 
 function isTransientProcessCard(metadata: string | null | undefined): boolean {
@@ -108,7 +111,7 @@ function promptPreviewLines(value: string | null | undefined): string[] {
     .slice(-2);
 }
 
-export function SessionCard({ session, onClick }: SessionCardProps) {
+export function SessionCard({ session, onClick, statusDisplay = "badge" }: SessionCardProps) {
   const navigate = useNavigate();
   const { t } = useTranslation("kanban");
   const isActive = session.status === "active";
@@ -152,12 +155,19 @@ export function SessionCard({ session, onClick }: SessionCardProps) {
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-3 min-w-0">
-        <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
+        <div className="flex items-start gap-2.5 min-w-0 overflow-hidden">
           <div className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 bg-accent/15 text-accent">
             <FolderOpen className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0 overflow-hidden">
-            <p className="text-sm font-medium text-gray-200 truncate">{title}</p>
+            {/* Up to three lines (long unbroken tokens break anywhere) so long
+                titles stay readable without stretching the card. */}
+            <p
+              className="text-sm font-medium leading-snug text-gray-200 line-clamp-3 [overflow-wrap:anywhere]"
+              title={title}
+            >
+              {title}
+            </p>
             <p className="text-[11px] text-gray-500 font-mono truncate">
               {session.id.slice(0, 12)}
             </p>
@@ -170,6 +180,7 @@ export function SessionCard({ session, onClick }: SessionCardProps) {
           reason={sessionAwaitingReason(session)}
           provider={session.provider}
           compact
+          variant={statusDisplay}
         />
       </div>
 

@@ -65,7 +65,7 @@ The client is a single-page application (SPA) built with modern web technologies
 
 `SplashScreen.tsx` asks which provider data to display (Claude Code, Codex, or both) before dashboard routes render. The Claude Code choice explicitly includes Cursor monitoring out of the box; the server expands that scope to stored `claude` + `cursor` rows while only Claude hooks need installation. Codex-only needs Codex hooks, and Both needs both hook sets. A ready selection enters the dashboard immediately. A partial or missing setup opens the live-monitoring gate with only the missing selected providers, then calls `POST /api/settings/install-hooks` for that subset and shows command output in place. A status-check failure remains fail-soft by opening manual setup for the full selected scope. API paths are deliberately excluded, so Swagger, ReDoc, and the raw OpenAPI document remain unobstructed and retain the dashboard favicon.
 
-Cursor cards use native `Cursor · <title>` headings plus project, subagent-count, and turn-count subtitles. Session Detail renders Cursor conversations through the same DTO as Claude/Codex and listens for `session_updated` so a newly submitted prompt appears before Cursor emits a tool event or assistant reply. During the prompt-history → transcript hand-off, stable provider message ids merge refresh windows without duplicating the human turn. Settings adds a dedicated Cursor pricing editor (`GET/PUT/DELETE /api/pricing/cursor`) with four published rate columns and plan-billing caveats; its strings ship in all five locales.
+Cursor cards use the native session title plus `Cursor · <project>`, subagent-count, and turn-count subtitles. Session Detail renders Cursor conversations through the same DTO as Claude/Codex and listens for `session_updated` so a newly submitted prompt appears before Cursor emits a tool event or assistant reply. During the prompt-history → transcript hand-off, stable provider message ids merge refresh windows without duplicating the human turn. Settings adds a dedicated Cursor pricing editor (`GET/PUT/DELETE /api/pricing/cursor`) with four published rate columns and plan-billing caveats; its strings ship in all five locales.
 
 Chart legends use the shared `PaginatedLegend.tsx` component. Lists at or below the configured page size render exactly as before with no controls. Longer Analytics donut legends and data-driven Workflows legends render one bounded page at a time with localized Previous / Next buttons and an accessible visible-range announcement, so labels stay reachable without expanding the chart card indefinitely.
 
@@ -781,16 +781,30 @@ local in-memory Codex startup row appears immediately just as it does on
 Dashboard and Kanban. That row remains non-navigable until the durable session
 ID replaces it; durable totals and later pages stay unchanged.
 
+Provider-owned main cards (Claude Code, Cursor, Codex) title themselves with
+the session's own title — wrapped to at most three lines, with long unbroken
+tokens breaking anywhere and the full title on hover — and lead the subtitle
+with the tool name (`Claude Code · repo · 12 turns`). Without a real title the
+card reads "Untitled session"; the footer keeps only the short session ID
+(subagent cards also keep the session name there as context).
+
 **Props:**
 ```typescript
 interface AgentCardProps {
   agent: Agent;
+  session?: Session; // model, cwd, cost, title, task progress
+  label?: string; // subtitle override for subagents
+  onClick?: () => void; // default: navigate to the session
+  statusDisplay?: "badge" | "dot"; // "dot" on Kanban, where the column names the status
 }
 ```
 
+`SessionCard` shares the three-line title clamp and the same `statusDisplay`
+prop.
+
 #### StatusBadge
 
-Colored status pills for agents (`AgentStatusBadge`) and sessions (`SessionStatusBadge`). When a row is in the yellow **Waiting** overlay (`awaiting_input_since` set), an optional `reason` prop explains WHY: a hover tooltip carries the full explanation, and — unless `compact` is set — a small nested chip (icon + short label) renders inline. Card layouts (Kanban / Dashboard trees) pass `compact` so the chip never squeezes the card title; the Sessions table and session-detail header show the full chip:
+Colored status pills for agents (`AgentStatusBadge`) and sessions (`SessionStatusBadge`). When a row is in the yellow **Waiting** overlay (`awaiting_input_since` set), an optional `reason` prop explains WHY: a hover tooltip carries the full explanation, and — unless `compact` is set — a small nested chip (icon + short label) renders inline. Card layouts (Kanban / Dashboard trees) pass `compact` so the chip never squeezes the card title; the Sessions table and session-detail header show the full chip. `variant="dot"` renders only the colored status dot — pulse, a tooltip with the status label (plus the waiting reason), and a screen-reader label — for Kanban cards, whose column already names the status:
 
 | `awaiting_reason` | Label | Meaning |
 | ----------------- | ----- | ------- |

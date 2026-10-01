@@ -1059,9 +1059,9 @@
                     Switch between <strong>Agent</strong> and <strong>Session</strong> swim lanes for
                     working, waiting, completed, error, and abandoned states. Yellow Waiting cards
                     identify work paused for user input, a permission gate, or the next prompt;
-                    hover badges and column headers for the exact reason and lifecycle rules. Cards
-                    show model, cumulative cost, and current tool, while WebSocket updates keep lane
-                    counts synchronized with the live event store.
+                    hover status dots and column headers for the exact reason and lifecycle rules.
+                    Cards show the session's own title (up to three lines), model, cumulative cost,
+                    and current tool, while WebSocket updates keep lane counts live.
                   </p>
                 </div>
                 <div class="feature-card">
@@ -1569,7 +1569,7 @@
             </div>
             <div class="screenshot-card" id="ss-kanban">
               <img src="../images/board.png" alt="Kanban Board — Agents view" width="100%" loading="lazy" decoding="async" />
-              <div class="screenshot-caption"><span class="caption-icon">📋</span> <span><strong>Kanban Board (agents)</strong> — agents swim-laned by status: Working, Waiting, Completed, Error. Cards show model, cost, and current tool call. Yellow column flags agents waiting on user input</span></div>
+              <div class="screenshot-caption"><span class="caption-icon">📋</span> <span><strong>Kanban Board (agents)</strong> — agents swim-laned by status: Working, Waiting, Completed, Error. Cards show the full session title, model, cost, and current tool call, with status as a colored dot. Yellow column flags agents waiting on user input</span></div>
             </div>
             <div class="screenshot-card">
               <img src="../images/board-sessions.png" alt="Kanban Board — Sessions view" width="100%" loading="lazy" decoding="async" />
@@ -7225,7 +7225,7 @@ npm run install-hooks</code></pre>
     <!-- Body-content translations — must load before script.js so the
          i18n engine sees window.__WIKI_CONTENT_I18N. Both are deferred, so they
          run in document order. -->
-    <script src="i18n-content.js?v=104" defer></script>
+    <script src="i18n-content.js?v=105" defer></script>
     <script src="script.js?v=59" defer></script>
     <script>
       (function () {
