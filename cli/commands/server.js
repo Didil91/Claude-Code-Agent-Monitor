@@ -135,6 +135,16 @@ async function startServer(opts) {
 }
 
 /**
+ * The port whose registered PID `stop` may signal: the target URL's port, or
+ * the protocol default when the URL has none (the same port serverIsUp()
+ * probed). Discovery is only consulted when no URL could be parsed.
+ */
+function stopTargetPort(target, fallback) {
+  const urlPort = target ? Number(target.port || (target.protocol === "https:" ? 443 : 80)) : NaN;
+  return Number.isInteger(urlPort) && urlPort > 0 ? urlPort : fallback();
+}
+
+/**
  * Stop the dashboard server by reading the PID from the discovery file and
  * sending SIGTERM (graceful), escalating to SIGKILL after 5 s. Returns true
  * when a server was stopped.
@@ -170,8 +180,7 @@ async function stopServer() {
       }
     );
   }
-  const urlPort = target && target.port ? Number(target.port) : NaN;
-  const targetPort = Number.isInteger(urlPort) && urlPort > 0 ? urlPort : resolveDashboardPort();
+  const targetPort = stopTargetPort(target, resolveDashboardPort);
   let pid;
   let ambiguous = false;
   try {
@@ -399,4 +408,4 @@ function register(program) {
     .action(run(cmdWhere));
 }
 
-module.exports = { register, startServer, stopServer };
+module.exports = { register, startServer, stopServer, stopTargetPort };
