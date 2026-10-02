@@ -126,6 +126,9 @@ describe("collectAllTools", () => {
     assert.ok(names.has("dashboard_reimport_history"));
     assert.ok(names.has("dashboard_reinstall_hooks"));
     assert.ok(names.has("dashboard_clear_all_data"));
+    assert.ok(names.has("dashboard_get_snapshot_storage"));
+    assert.ok(names.has("dashboard_compress_snapshots"));
+    assert.ok(names.has("dashboard_prune_snapshots"));
 
     // Remote Data Sources
     assert.ok(names.has("dashboard_list_remote_sources"));
@@ -181,6 +184,30 @@ describe("collectAllTools", () => {
     await assert.rejects(
       () => clearAll.handler({ confirmation_token: "WRONG" }),
       /Invalid confirmation_token/
+    );
+  });
+
+  it("snapshot prune requires criteria and gates applying as destructive", async () => {
+    const readOnly = fakeConfig({ allowMutations: false, allowDestructive: false });
+    const prune = collectAllTools(readOnly, api, logger).find(
+      (t) => t.name === "dashboard_prune_snapshots"
+    );
+    assert.ok(prune);
+    await assert.rejects(() => prune.handler({}), /At least one of max_age_days/);
+    await assert.rejects(
+      () => prune.handler({ max_age_days: 30, dry_run: false }),
+      /Mutating tools are disabled/
+    );
+
+    const destructive = fakeConfig({ allowMutations: true, allowDestructive: true });
+    const armed = collectAllTools(destructive, api, logger).find(
+      (t) => t.name === "dashboard_prune_snapshots"
+    );
+    assert.ok(armed);
+    await assert.rejects(
+      () =>
+        armed.handler({ max_age_days: 30, dry_run: false, confirmation_token: "CLEAR_ALL_DATA" }),
+      /Expected exact value: "PRUNE_SNAPSHOTS"/
     );
   });
 

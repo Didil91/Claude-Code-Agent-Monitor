@@ -17,8 +17,9 @@
  * Webhooks              webhooks · webhooks test <id>
  * Pricing               pricing · pricing set/delete/reset
  * Import                import rescan · import path <dir> · import-data <file>
- * Administration        doctor · info · export · cleanup · reinstall-hooks ·
- *                       update-check · clear-data --yes · open · version
+ * Administration        doctor · info · export · cleanup · snapshots ·
+ *                       reinstall-hooks · update-check · clear-data --yes ·
+ *                       open · version
  *
  * The REPL (`ccam repl`, aliases `shell` / `i`) runs each entered line as a
  * short-lived child `ccam` process, so its behavior is identical to the
@@ -32,8 +33,9 @@
  * running dashboard, PID-liveness-checked on read), falling back to 4820.
  *
  * Read commands are always safe. Mutating commands are explicit user actions
- * (ack, cleanup, pricing set, import) and the one destructive command —
- * `clear-data` — additionally requires the --yes flag before it will run.
+ * (ack, cleanup, pricing set, import) and the destructive ones are gated:
+ * `clear-data` requires --yes, and `snapshots prune` dry-runs unless given
+ * --apply --confirm PRUNE_SNAPSHOTS.
  *
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
@@ -1912,6 +1914,132 @@ async function cmdCleanup(flags) {
   console.log(`${c.green("✔")} Cleanup done: ${JSON.stringify(r)}`);
 }
 
+function humanBytes(bytes) {
+  const n = Number(bytes) || 0;
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 ** 2) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+  if (n < 1024 ** 4) return `${(n / 1024 ** 3).toFixed(2)} GB`;
+  return `${(n / 1024 ** 4).toFixed(2)} TB`;
+}
+
+/**
+ * Transcript snapshot storage + retention (issue #358).
+ *   ccam snapshots [status]          per-provider size, compressed share, policy
+ *   ccam snapshots compress          lossless: gzip snapshots whose original is gone
+ *   ccam snapshots prune [--days N] [--max-size 5GB] [--orphans]
+ *                                    DRY RUN — lists what would be removed
+ *   ccam snapshots prune … --apply --confirm PRUNE_SNAPSHOTS   actually remove
+ */
+async function cmdSnapshots(flags, positional) {
+  const sub = positional[0] || "status";
+  if (sub === "status") {
+    const s = await get("/api/settings/snapshots");
+    console.log(c.bold("Transcript snapshots"));
+    for (const [kind, label] of [
+      ["claude", "Claude Code"],
+      ["codex", "Codex"],
+      ["cursor", "Cursor"],
+    ]) {
+      const r = s.roots[kind] || {};
+      console.log(
+        `  ${label.padEnd(12)} ${humanBytes(r.bytes).padStart(10)}  ` +
+          `${String(r.files ?? 0).padStart(6)} files  ${r.compressed_files ?? 0} compressed  ` +
+          c.dim(r.path || "")
+      );
+    }
+    console.log(
+      `  ${"Total".padEnd(12)} ${c.bold(humanBytes(s.total_bytes).padStart(10))}  ${String(s.total_files).padStart(6)} files`
+    );
+    const p = s.policy || {};
+    console.log(
+      c.dim(
+        `  policy: compression ${p.compress ? "on" : "off"} · age cap ${p.max_age_days ? `${p.max_age_days}d` : "none"} · size cap ${p.max_bytes ? humanBytes(p.max_bytes) : "none"}`
+      )
+    );
+    return;
+  }
+  if (sub === "compress") {
+    const r = await post("/api/settings/snapshots/compress");
+    console.log(
+      `${c.green("✔")} Compressed ${r.compressed} snapshot(s) ` +
+        `(${humanBytes(r.bytes_before)} → ${humanBytes(r.bytes_after)})` +
+        (r.failed ? c.yellow(` · ${r.failed} failed`) : "") +
+        (r.skipped_roots?.length
+          ? c.dim(` · skipped (source tree unreadable): ${r.skipped_roots.join(", ")}`)
+          : "")
+    );
+    return;
+  }
+  if (sub === "prune") {
+    const body = {};
+    if (flags.days != null) body.max_age_days = Number(flags.days);
+    if (flags["max-size"] != null) body.max_bytes = String(flags["max-size"]);
+    if (flags.orphans === true) body.orphans = true;
+    if (!("max_age_days" in body) && !("max_bytes" in body) && !body.orphans) {
+      console.error(
+        c.red("✖ Usage: ccam snapshots prune [--days N] [--max-size 5GB] [--orphans] [--apply]")
+      );
+      console.error(c.dim("  --days N        snapshots of finished sessions idle > N days"));
+      console.error(c.dim("  --max-size S    then oldest-first until the total is under S"));
+      console.error(c.dim("  --orphans       snapshots whose session is no longer in the DB"));
+      console.error(c.dim("  Dry run by default. Apply with --apply --confirm PRUNE_SNAPSHOTS."));
+      process.exit(1);
+    }
+    const apply = flags.apply === true;
+    if (apply && flags.confirm !== "PRUNE_SNAPSHOTS") {
+      console.error(c.red("✖ --apply requires --confirm PRUNE_SNAPSHOTS."));
+      console.error(
+        c.dim(
+          "  A pruned snapshot may be the only copy left once the provider deleted the original."
+        )
+      );
+      process.exit(1);
+    }
+    if (apply) {
+      body.dry_run = false;
+      body.confirm = "PRUNE_SNAPSHOTS";
+    }
+    const r = await post("/api/settings/snapshots/prune", body);
+    const shown = (r.candidates || []).slice(0, 20);
+    for (const row of shown) {
+      console.log(
+        `  ${row.kind.padEnd(6)} ${row.session_id.padEnd(38)} ${humanBytes(row.bytes).padStart(10)}  ` +
+          `${row.reason.padEnd(9)} ${c.dim(row.last_activity || "no session row")}`
+      );
+    }
+    if (r.candidates.length > shown.length || r.truncated) {
+      console.log(c.dim(`  … and ${r.candidate_sessions - shown.length} more`));
+    }
+    if (r.dry_run) {
+      console.log(
+        `${c.cyan("ℹ")} Dry run: ${r.candidate_sessions} session(s), ${r.candidate_files} file(s), ` +
+          `${humanBytes(r.candidate_bytes)} would be removed; ${humanBytes(r.remaining_bytes)} would remain.`
+      );
+      if (r.candidate_sessions > 0) {
+        console.log(c.dim("  Apply with: --apply --confirm PRUNE_SNAPSHOTS"));
+      }
+    } else {
+      console.log(
+        `${c.green("✔")} Pruned ${r.candidate_sessions} session(s): ${r.removed_files} file(s), ` +
+          `${humanBytes(r.removed_bytes)}` +
+          (r.failed_files ? c.yellow(` · ${r.failed_files} locked file(s) left for later`) : "")
+      );
+    }
+    if (r.over_cap_bytes > 0) {
+      console.log(
+        c.yellow(
+          `  Still ${humanBytes(r.over_cap_bytes)} over the size cap (active/recent sessions are never pruned).`
+        )
+      );
+    }
+    return;
+  }
+  console.error(c.red(`✖ Unknown subcommand: snapshots ${sub}`));
+  console.error(c.dim("  Use: ccam snapshots [status|compress|prune]"));
+  process.exit(1);
+}
+
 async function cmdClearData(flags) {
   if (flags.yes !== true) {
     console.error(c.red("✖ clear-data deletes ALL sessions, agents, events, and token usage."));
@@ -2244,6 +2372,13 @@ const COMMAND_GROUPS = [
       ["info", "", "Raw system info JSON"],
       ["export", "[file.json]", "Export all data as JSON"],
       ["cleanup", "--hours N --days M", "Abandon stale / purge old sessions"],
+      ["snapshots", "[status]", "Transcript snapshot storage per provider + retention policy"],
+      ["snapshots compress", "", "Losslessly compress snapshots whose original is gone"],
+      [
+        "snapshots prune",
+        "--days N --max-size 5GB --orphans",
+        "Dry-run a snapshot prune (apply: --apply --confirm PRUNE_SNAPSHOTS)",
+      ],
       ["reinstall-hooks", "", "Reinstall Claude Code hooks"],
       ["hooks", "status|install …", "Inspect or install Claude Code/Codex hooks"],
       ["config", "claude|codex <action>", "Inspect and edit supported agent configuration"],
@@ -2511,6 +2646,7 @@ const SERVER_ONLY_REASONS = {
   import: "imports must go through the server's ingestion pipeline",
   "import-data": "restoring an export writes to the database through the server",
   cleanup: "cleanup is a server-side mutation",
+  snapshots: "snapshot storage and retention are managed by the running server",
   "clear-data": "data wipes must go through the server",
   "reinstall-hooks": "hook installation is performed by the server",
   "update-check": "the update check runs server-side (git fetch against the canonical remote)",
@@ -2559,6 +2695,10 @@ const REPL_FLAGS = [
   "--port",
   "--hours",
   "--days",
+  "--max-size",
+  "--orphans",
+  "--apply",
+  "--confirm",
   "--input",
   "--output",
   "--cache-read",
@@ -2959,6 +3099,7 @@ const SUBCOMMANDS = {
   hooks: ["status", "install"],
   config: ["claude", "codex"],
   "remote-sources": ["list", "add", "update", "test", "sync", "rm"],
+  snapshots: ["status", "compress", "prune"],
   mcp: ["stdio", "http", "repl"],
 };
 
@@ -3041,6 +3182,8 @@ async function runCommand(argv) {
       return cmdImportData(positional);
     case "cleanup":
       return cmdCleanup(flags);
+    case "snapshots":
+      return cmdSnapshots(flags, positional);
     case "clear-data":
       return cmdClearData(flags);
     case "reinstall-hooks":

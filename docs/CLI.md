@@ -142,7 +142,7 @@ When the server is down, **read-only commands automatically fall back to reading
 
 | Works offline | Server required (with the printed reason) |
 | ------------- | ----------------------------------------- |
-| `sessions`, `session <id>`*, `agents`, `events`, `kanban`, `stats`, `pricing` (list), `alerts` (list), `rules`, `export`, `doctor` | `tail` (live capture), `analytics` / `workflows` / `runs` / `cost` (server-side aggregation & pricing math), `alerts ack`, `webhooks` (all), `pricing set/delete/reset`, `import`, `remote-sources` (all — SSH pull needs the server), `cleanup`, `clear-data`, `reinstall-hooks`, `update-check` (server-side git fetch), `info`, `health` |
+| `sessions`, `session <id>`*, `agents`, `events`, `kanban`, `stats`, `pricing` (list), `alerts` (list), `rules`, `export`, `doctor` | `tail` (live capture), `analytics` / `workflows` / `runs` / `cost` (server-side aggregation & pricing math), `alerts ack`, `webhooks` (all), `pricing set/delete/reset`, `import`, `remote-sources` (all — SSH pull needs the server), `cleanup`, `snapshots`, `clear-data`, `reinstall-hooks`, `update-check` (server-side git fetch), `info`, `health` |
 
 \* `session <id>` shows everything except the cost line, which requires the server's pricing engine. Offline export payloads carry `"exported_offline": true`. Offline data is as of the last capture — with no server running, no hooks are being ingested either.
 
@@ -243,7 +243,10 @@ Manage the remote (SSH) machines this dashboard pulls Claude Code, Codex, or bot
 | `ccam doctor` | Diagnosis: API reachability, hook installation status + path, database path/size/row counts, server uptime and Node version, WS connections |
 | `ccam info` | The raw `/api/settings/info` JSON (pipe it to `jq`) |
 | `ccam export [file.json]` | Full JSON data export (sessions, agents, events, tokens, workflows, dashboard runs, alert rules, pricing) — defaults to a dated filename. Re-importable via `ccam import-data` |
-| `ccam cleanup --hours N --days M` | Abandon active sessions idle for `N` hours and/or purge completed sessions older than `M` days |
+| `ccam cleanup --hours N --days M` | Abandon active sessions idle for `N` hours and/or purge completed sessions older than `M` days (their transcript snapshots are deleted too) |
+| `ccam snapshots [status]` | Transcript snapshot storage per provider (Claude Code / Codex / Cursor), compressed share, and the retention policy |
+| `ccam snapshots compress` | Losslessly compress snapshots whose original transcript is gone (verified before the plain copy is removed) |
+| `ccam snapshots prune [--days N] [--max-size 5GB] [--orphans]` | **Dry run** listing the finished sessions whose snapshots would be removed; add `--apply --confirm PRUNE_SNAPSHOTS` to delete. A pruned snapshot may be the only remaining copy of a conversation |
 | `ccam reinstall-hooks` | Rewrite the Claude Code hook entries in `~/.claude/settings.json` |
 | `ccam hooks status` | Read Claude Code and Codex hook installation state |
 | `ccam hooks install claude codex --yes` | Install either or both provider hook sets |
