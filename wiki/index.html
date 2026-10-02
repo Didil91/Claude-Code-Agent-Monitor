@@ -2187,7 +2187,7 @@ npm run mcp:start:repl         # interactive CLI with tab completion</code></pre
                 <tr>
                   <td><code>DASHBOARD_SNAPSHOT_MAX_BYTES</code></td>
                   <td><code>unset</code></td>
-                  <td>Opt-in size cap for all three snapshot directories, in bytes or a size such as <code>5GB</code>. Every 6 h the snapshots of the oldest finished sessions are deleted until the total is under the cap; active and recent sessions are never pruned, so the total can stay above it.</td>
+                  <td>Opt-in size cap for all three snapshot directories, in bytes or a size such as <code>5GB</code>. Every 6 h the snapshots of the oldest finished sessions are deleted until the total is under the cap; active sessions and those active in the last 24 h are never pruned, so the total can stay above it.</td>
                 </tr>
                 <tr>
                   <td><code>DASHBOARD_TOKEN_REPAIR</code></td>
@@ -7240,7 +7240,7 @@ npm run install-hooks</code></pre>
     <!-- Body-content translations — must load before script.js so the
          i18n engine sees window.__WIKI_CONTENT_I18N. Both are deferred, so they
          run in document order. -->
-    <script src="i18n-content.js?v=105" defer></script>
+    <script src="i18n-content.js?v=106" defer></script>
     <script src="script.js?v=59" defer></script>
     <script>
       (function () {

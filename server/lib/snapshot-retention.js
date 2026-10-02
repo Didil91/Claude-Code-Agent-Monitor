@@ -41,6 +41,9 @@ const MAINTENANCE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 // writes (compress, prune, purge) invalidate it immediately.
 const STORAGE_CACHE_TTL_MS = 5 * 60 * 1000;
 const TERMINAL_STATUSES = new Set(["completed", "error", "abandoned"]);
+// Finished sessions active this recently are never pruned by the size cap —
+// the cap reports `over_cap_bytes` instead of eating the newest history.
+const RECENT_PROTECT_MS = 24 * 60 * 60 * 1000;
 // Cap on how many candidate rows a plan returns (totals always cover all).
 const MAX_PLAN_ROWS = 500;
 
@@ -291,7 +294,7 @@ function planSnapshotPrune(db, { maxAgeDays = null, maxBytes = null, orphans = f
     const lastActivityMs = Math.max(session.lastActivityMs || 0, group.newestMtimeMs);
     if (ageCutoff !== null && lastActivityMs < ageCutoff) {
       take(group, "max_age", lastActivityMs);
-    } else {
+    } else if (nowMs - lastActivityMs >= RECENT_PROTECT_MS) {
       eligible.push({ group, lastActivityMs });
     }
   }

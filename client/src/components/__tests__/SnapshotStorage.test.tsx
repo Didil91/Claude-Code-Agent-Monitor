@@ -176,6 +176,25 @@ describe("SnapshotStorage", () => {
     );
   });
 
+  it("reports failed compressions and skipped providers instead of 'nothing to compress'", async () => {
+    compress.mockResolvedValueOnce({
+      ok: true,
+      compressed: 0,
+      bytes_before: 0,
+      bytes_after: 0,
+      failed: 2,
+      skipped_roots: ["cursor"],
+      storage,
+    });
+    render(<SnapshotStorage storage={storage} onChanged={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: /compress now/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/2 snapshots could not be compressed/)).toBeInTheDocument()
+    );
+    expect(screen.getByText(/Skipped Cursor/)).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing to compress/)).not.toBeInTheDocument();
+  });
+
   it("compresses on demand and reports the saving", async () => {
     const onChanged = vi.fn();
     compress.mockResolvedValueOnce({

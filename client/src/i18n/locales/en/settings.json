@@ -337,6 +337,9 @@
     "compressNone": "Nothing to compress. Every snapshot's original is still on disk or was active recently.",
     "compressResult_one": "Compressed {{count}} snapshot ({{before}} → {{after}})",
     "compressResult_other": "Compressed {{count}} snapshots ({{before}} → {{after}})",
+    "compressFailed_one": "{{count}} snapshot could not be compressed and was left unchanged.",
+    "compressFailed_other": "{{count}} snapshots could not be compressed and were left unchanged.",
+    "compressSkipped": "Skipped {{providers}}: the source folder is missing or unreadable, so nothing there was treated as deleted.",
     "pruneTitle": "Prune old snapshots",
     "pruneDesc": "Removes the snapshots of whole finished sessions, oldest first. Preview first: a pruned snapshot may be the only remaining copy of a conversation.",
     "olderThan": "Older than",
@@ -349,7 +352,7 @@
     "previewNone": "Nothing matches. No snapshots would be removed.",
     "previewResult_one": "{{count}} session ({{files}} files, {{size}}) would be removed; {{remaining}} would remain.",
     "previewResult_other": "{{count}} sessions ({{files}} files, {{size}}) would be removed; {{remaining}} would remain.",
-    "overCap": "Still {{size}} over the size cap. Active and recent sessions are never pruned.",
+    "overCap": "Still {{size}} over the size cap. Active sessions and those active in the last 24 h are never pruned.",
     "pruneWarning": "This permanently deletes these snapshots. Sessions whose originals were already deleted will lose their conversation.",
     "pruneResult_one": "Pruned the snapshots of {{count}} session ({{size}})",
     "pruneResult_other": "Pruned the snapshots of {{count}} sessions ({{size}})"

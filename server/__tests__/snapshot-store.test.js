@@ -142,6 +142,9 @@ describe("writeSnapshot", () => {
     fs.writeFileSync(src, jsonlLines(3));
     setOld(src, 10);
     store.writeTombstone(root, "s");
+    // Prunes land on sessions idle for days; date the tombstone back so the
+    // "resumed" write below is strictly newer even on coarse/fast clocks.
+    setOld(path.join(root, ".pruned", "s"), 1);
     const skipped = store.writeSnapshot({ root, sessionId: "s", source: src, relPath: "s.jsonl" });
     assert.equal(skipped.reason, "tombstoned");
     assert.equal(fs.existsSync(path.join(root, "s.jsonl")), false);

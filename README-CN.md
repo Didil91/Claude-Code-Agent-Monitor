@@ -662,7 +662,7 @@ flowchart LR
 | `DASHBOARD_TASK_SUMMARY_TTL_MS` | `2000` | 任务进度缓存的宽限窗口（毫秒），作用于 `include_task_progress` 列表请求**以及**会话详情的 `todo_snapshot`。正在持续追加的转录文件几乎无法命中 size+mtime 缓存键，增长的转录会从其最后一条完整 JSONL 行开始增量解析，而此下限仍会把一连串列表刷新（例如仪表盘随 Hook 驱动的 WebSocket 事件刷新）合并为一次解析。窗口内改为返回刚解析的（略有滞后、仅用于展示的）结果；设为 `0` 则每次追加都立即解析 |
 | `DASHBOARD_SNAPSHOT_COMPRESS` | `1`（开启） | 设为 `0` / `false` / `off` 可停止后台无损压缩——对象是原始文件已被 Claude Code 或 Cursor 删除（且闲置 24 小时）的对话记录快照。每个 `.jsonl.gz` 都会先解压并比对（SHA-256 + 长度）后才删除未压缩文件；源目录缺失或不可读的提供方会被整体跳过。Codex 快照从不压缩 |
 | `DASHBOARD_SNAPSHOT_MAX_AGE_DAYS` | _（未设置——不限）_ | 可选保留上限：每 6 小时删除闲置超过该天数的已结束（completed/error/abandoned）会话的快照，并且不再为这么旧的源文件创建快照。被清理的会话会留下墓碑标记，重新导入不会让它们重新出现；之后恢复的会话会重新受到保护。请先用 `ccam snapshots prune --days N` 预览——被清理的快照可能是某段对话仅存的副本 |
-| `DASHBOARD_SNAPSHOT_MAX_BYTES` | _（未设置——不限）_ | 三个快照目录的可选总容量上限（字节数，或如 `5GB` 的大小）。每 6 小时从最旧的已结束会话开始删除快照，直到总量低于上限；活跃会话和近期会话永远不会被清理，因此总量可能仍高于上限 |
+| `DASHBOARD_SNAPSHOT_MAX_BYTES` | _（未设置——不限）_ | 三个快照目录的可选总容量上限（字节数，或如 `5GB` 的大小）。每 6 小时从最旧的已结束会话开始删除快照，直到总量低于上限；活跃会话和最近 24 小时内有活动的会话永远不会被清理，因此总量可能仍高于上限 |
 | `DASHBOARD_REMOTE_SYNC_MS` | `15000` | **远程数据源**后台同步的间隔（毫秒），会独立拉取每个已启用远程的 `~/.claude/projects` 和 `~/.codex/sessions`（另含 Codex 的轻量 `session_index.jsonl` 标题索引），再分别通过本地导入器重新导入。新增或重新启用数据源时也会立即同步一次。设为 `0` 可禁用远程源轮询 |
 | `DASHBOARD_REMOTE_ACTIVE_WINDOW_MS` | `600000`（10 分钟） | **远程数据源**会话实时状态的新鲜度窗口。每次同步时，若远程 Claude Code 或 Codex 会话对应镜像 transcript 的 **JSONL 最后事件**在此窗口内，仍视为运行中（`active`）；镜像停止推进超过该时长后，会话会被协调为 `completed`。远程会话不接收实时 Hook，因此按 provider 的镜像协调取代本地 liveness；失败、缺失或卡住的 provider 镜像会回退到常规 stale 扫描。链路较慢或空闲回合很长时可调大 |
 | `DASHBOARD_REMOTE_SYNC_TIMEOUT_MS` | `600000` | 每个远程源 `scp` 的超时时间 |

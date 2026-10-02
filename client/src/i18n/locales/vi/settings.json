@@ -337,6 +337,9 @@
     "compressNone": "Không có gì để nén. Bản gốc của mọi bản sao lưu vẫn còn trên đĩa hoặc vừa có hoạt động gần đây.",
     "compressResult_one": "Đã nén {{count}} bản sao lưu ({{before}} → {{after}})",
     "compressResult_other": "Đã nén {{count}} bản sao lưu ({{before}} → {{after}})",
+    "compressFailed_one": "Không nén được {{count}} bản sao lưu, đã giữ nguyên.",
+    "compressFailed_other": "Không nén được {{count}} bản sao lưu, đã giữ nguyên.",
+    "compressSkipped": "Đã bỏ qua {{providers}}: thư mục nguồn bị thiếu hoặc không đọc được, nên không có gì ở đó bị coi là đã xóa.",
     "pruneTitle": "Dọn bản sao lưu cũ",
     "pruneDesc": "Xóa bản sao lưu của toàn bộ phiên đã kết thúc, cũ nhất trước. Hãy xem trước: bản sao lưu bị xóa có thể là bản duy nhất còn lại của một cuộc hội thoại.",
     "olderThan": "Cũ hơn",
@@ -349,7 +352,7 @@
     "previewNone": "Không có mục nào khớp. Sẽ không xóa bản sao lưu nào.",
     "previewResult_one": "Sẽ xóa {{count}} phiên ({{files}} tệp, {{size}}); còn lại {{remaining}}.",
     "previewResult_other": "Sẽ xóa {{count}} phiên ({{files}} tệp, {{size}}); còn lại {{remaining}}.",
-    "overCap": "Vẫn vượt giới hạn dung lượng {{size}}. Phiên đang hoạt động và phiên gần đây không bao giờ bị dọn.",
+    "overCap": "Vẫn vượt giới hạn dung lượng {{size}}. Phiên đang hoạt động và phiên có hoạt động trong 24 giờ qua không bao giờ bị dọn.",
     "pruneWarning": "Thao tác này xóa vĩnh viễn các bản sao lưu này. Những phiên có bản gốc đã bị xóa sẽ mất nội dung hội thoại.",
     "pruneResult_one": "Đã dọn bản sao lưu của {{count}} phiên ({{size}})",
     "pruneResult_other": "Đã dọn bản sao lưu của {{count}} phiên ({{size}})"

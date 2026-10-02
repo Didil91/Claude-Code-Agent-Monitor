@@ -1664,7 +1664,8 @@ the only remaining copy of a transcript for a session the user still has.**
 - **Opt-in caps.** `DASHBOARD_SNAPSHOT_MAX_AGE_DAYS` and
   `DASHBOARD_SNAPSHOT_MAX_BYTES` (both unset by default) prune whole finished
   sessions, oldest first by `max(DB activity, snapshot mtime)`; `active`
-  sessions are never touched. Cap removals write a tombstone
+  sessions are never touched, and the size cap also spares finished sessions
+  active in the last 24 h (reporting `over_cap_bytes` instead). Cap removals write a tombstone
   (`<root>/.pruned/<sessionId>`) so a re-import does not regrow them; a source
   written after the tombstone (a resumed session) is snapshotted again. The age
   cap also stops new snapshots of sources idle that long.

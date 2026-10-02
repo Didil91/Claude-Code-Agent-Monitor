@@ -10627,7 +10627,7 @@ paths:
       tags:
         - Settings
       summary: Plan or apply a transcript snapshot prune
-      description: 'Selects whole finished sessions (completed/error/abandoned; never active) whose snapshots to remove: those idle longer than `max_age_days`, then oldest-first until the total is under `max_bytes`, plus — only with `orphans: true` — snapshots whose session row no longer exists. DRY RUN BY DEFAULT: nothing is deleted unless `dry_run: false` and `confirm: "PRUNE_SNAPSHOTS"` are both sent. ⚠ Applying is IRREVERSIBLE — once Claude Code/Codex/Cursor deleted the original, the snapshot is the only copy of that conversation. Cap-driven removals are tombstoned so a re-import does not recreate them (a session that later resumes is protected again).'
+      description: 'Selects whole finished sessions (completed/error/abandoned; never active, and the size cap also spares sessions active in the last 24 h) whose snapshots to remove: those idle longer than `max_age_days`, then oldest-first until the total is under `max_bytes`, plus — only with `orphans: true` — snapshots whose session row no longer exists. DRY RUN BY DEFAULT: nothing is deleted unless `dry_run: false` and `confirm: "PRUNE_SNAPSHOTS"` are both sent. ⚠ Applying is IRREVERSIBLE — once Claude Code/Codex/Cursor deleted the original, the snapshot is the only copy of that conversation. Cap-driven removals are tombstoned so a re-import does not recreate them (a session that later resumes is protected again).'
       operationId: pruneSnapshots
       requestBody:
         required: true

@@ -104,9 +104,19 @@ before(async () => {
   base = `http://127.0.0.1:${server.address().port}`;
 });
 
-after(() => {
-  server?.close();
-  fs.rmSync(TMP, { recursive: true, force: true });
+after(async () => {
+  await new Promise((resolve) => (server ? server.close(resolve) : resolve()));
+  try {
+    db.close();
+  } catch {
+    /* already closed */
+  }
+  try {
+    fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  } catch {
+    // Windows can hold the SQLite file briefly after close; the OS temp dir is
+    // reclaimed anyway, and cleanup must never fail the suite.
+  }
 });
 
 describe("compression of snapshots whose original is gone", () => {
@@ -286,6 +296,12 @@ describe("purge and prune", () => {
     snapshotTranscript(live, "old-finished");
     assert.equal(fs.existsSync(path.join(SNAP_DIR, "old-finished.jsonl")), false);
 
+    // Date the tombstone back so the resume write below is strictly newer even
+    // when the prune and the append fall in the same clock tick.
+    const tomb = path.join(SNAP_DIR, ".pruned", "old-finished");
+    const dayAgo = new Date(Date.now() - DAY);
+    fs.utimesSync(tomb, dayAgo, dayAgo);
+
     // The session resumes (its source is written after the prune) → protected again.
     fs.appendFileSync(live, userLines(1, "resumed"));
     snapshotTranscript(live, "old-finished");
@@ -324,6 +340,16 @@ describe("purge and prune", () => {
     // resumed "old-finished" now ranks as recent.
     assert.equal(ids[0], "cap-oldest");
     assert.ok(plan.remaining_bytes <= total - 1);
+  });
+
+  it("max_bytes never prunes finished sessions active in the last 24 h", () => {
+    insertSession("cap-fresh", { daysAgo: 0.1 });
+    writeSnapshotFile("cap-fresh", userLines(40), 0.1);
+    const plan = retention.planSnapshotPrune(db, { maxBytes: 1 });
+    const ids = plan.candidates.map((c) => c.sessionId);
+    assert.ok(!ids.includes("cap-fresh"));
+    assert.ok(ids.includes("cap-oldest"), "older finished sessions are still eligible");
+    assert.ok(plan.over_cap_bytes > 0, "an unreachable cap is reported, not forced");
   });
 
   it("deleteSnapshotsForSessions removes across all provider dirs", () => {

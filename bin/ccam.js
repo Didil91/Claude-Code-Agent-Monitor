@@ -2029,7 +2029,7 @@ async function cmdSnapshots(flags, positional) {
     if (r.over_cap_bytes > 0) {
       console.log(
         c.yellow(
-          `  Still ${humanBytes(r.over_cap_bytes)} over the size cap (active/recent sessions are never pruned).`
+          `  Still ${humanBytes(r.over_cap_bytes)} over the size cap (active sessions and those active in the last 24 h are never pruned).`
         )
       );
     }

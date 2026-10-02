@@ -70,12 +70,14 @@ export function SnapshotStorage({
     setBanner(null);
   };
 
-  const run = async (kind: "compress" | "preview" | "prune", fn: () => Promise<string | null>) => {
+  type Outcome = string | { message: string; isError: boolean } | null;
+  const run = async (kind: "compress" | "preview" | "prune", fn: () => Promise<Outcome>) => {
     setBusy(kind);
     setBanner(null);
     try {
-      const message = await fn();
-      if (message) setBanner({ message, isError: false });
+      const outcome = await fn();
+      if (typeof outcome === "string") setBanner({ message: outcome, isError: false });
+      else if (outcome) setBanner(outcome);
     } catch (err) {
       setBanner({
         message: t("messages.actionFailed", {
@@ -92,12 +94,28 @@ export function SnapshotStorage({
     run("compress", async () => {
       const res = await api.settings.snapshots.compress();
       await onChanged();
-      if (res.compressed === 0) return t("snapshots.compressNone");
-      return t("snapshots.compressResult", {
-        count: res.compressed,
-        before: formatStorageBytes(res.bytes_before),
-        after: formatStorageBytes(res.bytes_after),
-      });
+      const parts: string[] = [];
+      if (res.compressed > 0) {
+        parts.push(
+          t("snapshots.compressResult", {
+            count: res.compressed,
+            before: formatStorageBytes(res.bytes_before),
+            after: formatStorageBytes(res.bytes_after),
+          })
+        );
+      }
+      if (res.failed > 0) parts.push(t("snapshots.compressFailed", { count: res.failed }));
+      if (res.skipped_roots.length > 0) {
+        const names: Record<string, string> = { claude: "Claude Code", cursor: "Cursor" };
+        parts.push(
+          t("snapshots.compressSkipped", {
+            providers: res.skipped_roots.map((root) => names[root] ?? root).join(", "),
+          })
+        );
+      }
+      if (parts.length === 0) return t("snapshots.compressNone");
+      // Problems with nothing compressed read as an error; partial success doesn't.
+      return { message: parts.join(" "), isError: res.compressed === 0 };
     });
 
   const handlePreview = () =>

@@ -1355,7 +1355,7 @@ missing or unreadable is reported in `skipped_roots` and left untouched.
 
 `POST /api/settings/snapshots/prune` takes at least one of `max_age_days`,
 `max_bytes` (bytes or a size such as `"5GB"`), and `orphans: true`. It selects
-whole finished sessions (never `active` ones), oldest first, and is a **dry
+whole finished sessions (never `active` ones; the size cap also spares sessions active in the last 24 h), oldest first, and is a **dry
 run** unless the body also has `"dry_run": false` and
 `"confirm": "PRUNE_SNAPSHOTS"`; anything else returns `400
 INVALID_PRUNE_REQUEST`. The response lists up to 500 `candidates` (`kind`,
