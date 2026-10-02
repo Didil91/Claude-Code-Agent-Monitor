@@ -4,6 +4,16 @@
   "exportData": "Xuất dữ liệu",
   "acrossSessions": "Trên toàn bộ phiên đang được theo dõi",
   "basedOnUsage": "Dựa trên mức dùng token theo mô hình",
+  "appearance": {
+    "title": "Giao diện",
+    "description": "Chọn giao diện của bảng điều khiển. “Theo hệ thống” sẽ dùng thiết lập của hệ điều hành.",
+    "theme": "Chủ đề",
+    "options": {
+      "system": "Theo hệ thống",
+      "light": "Sáng",
+      "dark": "Tối"
+    }
+  },
   "tabby": {
     "title": "Bạn đồng hành Tabby",
     "description": "Chú mèo nổi phản ứng với các phiên trực tiếp của bạn.",

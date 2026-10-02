@@ -111,12 +111,18 @@ import {
   Cloud,
   Volume2,
   VolumeX,
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 import { useLocation } from "react-router";
 import { api } from "../lib/api";
 import { usePaletteAction } from "../components/PaletteActionProvider";
 
 import { eventBus } from "../lib/eventBus";
+import { useThemePreference } from "../hooks/useThemePreference";
+import { THEME_PREFERENCES, type ThemePreference } from "../lib/theme";
 import { isRemoteDataRefreshMessage } from "../lib/remoteDataEvents";
 import { tabbyPrefs } from "../components/Tabby/prefs";
 import {
@@ -144,6 +150,7 @@ const SETTINGS_SECTIONS: {
   fallback?: string;
   Icon: typeof DollarSign;
 }[] = [
+  { id: "appearance", labelKey: "appearance.title", Icon: Palette },
   { id: "data-display", labelKey: "display.title", Icon: Layers },
   { id: "claude-pricing", labelKey: "pricing.navClaude", Icon: DollarSign },
   { id: "cursor-pricing", labelKey: "pricing.navCursor", Icon: DollarSign },
@@ -164,6 +171,12 @@ const SETTINGS_SECTIONS: {
   { id: "data", labelKey: "data.title", Icon: Database },
   { id: "about", labelKey: "about.title", Icon: Server },
 ];
+
+const THEME_OPTION_ICONS: Record<ThemePreference, typeof Sun> = {
+  system: Monitor,
+  light: Sun,
+  dark: Moon,
+};
 
 // Keys that change a range input's value - the only ones that should trigger a
 // volume preview cue (Tab / Enter / character keys must stay silent).
@@ -462,7 +475,7 @@ function PricingInfoTooltip({ provider = "claude" }: { provider?: "claude" | "cu
         <div
           ref={popoverRef}
           role="tooltip"
-          className="fixed z-50 p-3 bg-[#12121f] border border-[#2a2a4a] rounded-lg shadow-2xl text-[11px] text-gray-300 pointer-events-none"
+          className="fixed z-50 p-3 bg-tip-bg border border-tip-border rounded-lg shadow-2xl text-[11px] text-gray-300 pointer-events-none"
           style={{ left: pos.left, top: pos.top, width: 320 }}
         >
           <p className="text-xs font-semibold text-gray-100 mb-2">{t(`${key}.title`)}</p>
@@ -1247,6 +1260,7 @@ export function Settings() {
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
   const [pricingResetRevision, setPricingResetRevision] = useState(0);
   const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>(loadNotifPrefs);
+  const [themePreference, setThemePref] = useThemePreference();
   const [tabbyEnabled, setTabbyEnabled] = useState(() => tabbyPrefs.getEnabled());
   const setTabby = useCallback((v: boolean) => {
     tabbyPrefs.setEnabled(v);
@@ -1969,6 +1983,49 @@ export function Settings() {
           </div>
         </div>
       </div>
+
+      {/* ─── APPEARANCE ─── */}
+      <section id="appearance" className="scroll-mt-24">
+        <div className="mb-4">
+          <h3 className="flex items-center gap-2 text-sm font-medium text-gray-300">
+            <Palette className="h-4 w-4 text-gray-500" />
+            {t("appearance.title")}
+          </h3>
+          <p className="mt-0.5 text-xs text-gray-500">{t("appearance.description")}</p>
+        </div>
+        <div className="card p-5">
+          <div className="text-sm font-medium text-gray-200" id="theme-label">
+            {t("appearance.theme")}
+          </div>
+          <div
+            role="radiogroup"
+            aria-labelledby="theme-label"
+            className="mt-3 inline-flex rounded-lg border border-border bg-surface-2 p-1"
+          >
+            {THEME_PREFERENCES.map((option: ThemePreference) => {
+              const OptionIcon = THEME_OPTION_ICONS[option];
+              const selected = themePreference === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setThemePref(option)}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    selected
+                      ? "bg-accent text-white"
+                      : "text-gray-400 hover:bg-surface-4 hover:text-gray-200"
+                  }`}
+                >
+                  <OptionIcon className="h-3.5 w-3.5" />
+                  {t(`appearance.options.${option}`)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       {/* ─── PRODUCT DATA DISPLAY ─── */}
       <section id="data-display" className="scroll-mt-24">

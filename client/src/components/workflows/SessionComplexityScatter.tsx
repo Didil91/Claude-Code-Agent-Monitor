@@ -122,7 +122,7 @@ function Tooltip({ state }: { state: TooltipState }) {
 
   return (
     <div
-      className="fixed z-50 px-3 py-2 text-xs bg-[#12121f] border border-[#2a2a4a] rounded-lg shadow-xl text-gray-200 pointer-events-none whitespace-nowrap"
+      className="fixed z-50 px-3 py-2 text-xs bg-tip-bg border border-tip-border rounded-lg shadow-xl text-gray-200 pointer-events-none whitespace-nowrap"
       style={{
         left: nearRight ? state.x - 12 : state.x + 12,
         top: state.y - 10,
@@ -151,7 +151,7 @@ function Tooltip({ state }: { state: TooltipState }) {
           </span>
         )}
       </div>
-      <div className="mt-1 pt-1 border-t border-[#2a2a4a]">
+      <div className="mt-1 pt-1 border-t border-tip-border">
         <span className="font-medium" style={{ color: statusColor(state.item.status) }}>
           {t(`common:status.${state.item.status}`, { defaultValue: state.item.status })}
         </span>

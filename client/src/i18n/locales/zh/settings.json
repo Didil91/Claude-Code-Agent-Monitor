@@ -4,6 +4,16 @@
   "exportData": "导出数据",
   "acrossSessions": "跨所有追踪的会话",
   "basedOnUsage": "基于每模型 Token 使用量",
+  "appearance": {
+    "title": "外观",
+    "description": "选择仪表板的外观。“跟随系统”会使用操作系统的设置。",
+    "theme": "主题",
+    "options": {
+      "system": "跟随系统",
+      "light": "浅色",
+      "dark": "深色"
+    }
+  },
   "tabby": {
     "title": "Tabby 伙伴",
     "description": "一只浮动的猫，会对你的实时会话做出反应。",

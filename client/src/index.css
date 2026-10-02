@@ -8,10 +8,79 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme tokens. Colours are space-separated RGB channels so Tailwind opacity
+   modifiers (bg-surface-2/50) keep working. Dark is the default; `theme.ts`
+   (and the inline script in index.html) set data-theme on <html>. */
+:root {
+  color-scheme: dark;
+  --surface-0: 6 6 10;
+  --surface-1: 12 12 20;
+  --surface-2: 19 19 30;
+  --surface-3: 26 26 40;
+  --surface-4: 34 34 51;
+  --surface-5: 42 42 61;
+  --border: 42 42 61;
+  --border-light: 54 54 80;
+  --accent: 99 102 241;
+  --accent-hover: 129 140 248;
+  --tip-bg: 18 18 31;
+  --tip-border: 42 42 74;
+  --tip-text: 226 232 240;
+  --tip-text-2: 203 213 225;
+  --tip-muted: 148 163 184;
+  --ring-track: 30 30 46;
+  --selection-text: 228 228 237;
+  --gray-50: 249 250 251;
+  --gray-100: 243 244 246;
+  --gray-200: 229 231 235;
+  --gray-300: 209 213 219;
+  --gray-400: 156 163 175;
+  --gray-500: 107 114 128;
+  --gray-600: 75 85 99;
+  --gray-700: 55 65 81;
+  --gray-800: 31 41 55;
+  --gray-900: 17 24 39;
+  --gray-950: 3 7 18;
+}
+
+/* Light palette: the gray scale is inverted (text steps get dark, borders and
+   fills get light) so existing text-gray-* / bg-gray-* classes stay legible. */
+[data-theme="light"] {
+  color-scheme: light;
+  --surface-0: 243 244 249;
+  --surface-1: 255 255 255;
+  --surface-2: 238 240 246;
+  --surface-3: 255 255 255;
+  --surface-4: 236 238 245;
+  --surface-5: 224 227 238;
+  --border: 217 220 232;
+  --border-light: 190 195 212;
+  --accent: 79 70 229;
+  --accent-hover: 67 56 202;
+  --tip-bg: 255 255 255;
+  --tip-border: 203 207 222;
+  --tip-text: 15 23 42;
+  --tip-text-2: 51 65 85;
+  --tip-muted: 100 116 139;
+  --ring-track: 226 229 240;
+  --selection-text: 15 23 42;
+  --gray-50: 15 23 42;
+  --gray-100: 17 24 39;
+  --gray-200: 31 41 55;
+  --gray-300: 55 65 81;
+  --gray-400: 75 85 99;
+  --gray-500: 107 114 128;
+  --gray-600: 140 147 160;
+  --gray-700: 209 213 219;
+  --gray-800: 229 231 235;
+  --gray-900: 243 244 246;
+  --gray-950: 249 250 251;
+}
+
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: #2a2a3d #0c0c14;
+    scrollbar-color: rgb(var(--surface-5)) rgb(var(--surface-1));
   }
 
   *::-webkit-scrollbar {
@@ -20,21 +89,21 @@
   }
 
   *::-webkit-scrollbar-track {
-    background: #0c0c14;
+    background: rgb(var(--surface-1));
   }
 
   *::-webkit-scrollbar-thumb {
-    background: #2a2a3d;
+    background: rgb(var(--surface-5));
     border-radius: 3px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background: #363650;
+    background: rgb(var(--border-light));
   }
 
   ::selection {
     background: rgba(99, 102, 241, 0.3);
-    color: #e4e4ed;
+    color: rgb(var(--selection-text));
   }
 
   ::-webkit-calendar-picker-indicator {
@@ -98,9 +167,9 @@
     z-index: 100;
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
-    border: 1px solid #363650;
-    background: #15151f;
-    color: #e4e4ed;
+    border: 1px solid rgb(var(--border-light));
+    background: rgb(var(--surface-3));
+    color: rgb(var(--gray-100));
     font-size: 0.8125rem;
     font-weight: 500;
     text-decoration: none;
@@ -109,7 +178,7 @@
   }
   .skip-to-content:focus {
     transform: translateY(0);
-    outline: 2px solid #6366f1;
+    outline: 2px solid rgb(var(--accent));
     outline-offset: 2px;
   }
 }
@@ -126,4 +195,27 @@
 
 .animate-pulse-dot {
   animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Light-theme fixes for utilities that assume a dark surface. */
+[data-theme="light"] ::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+[data-theme="light"] .card {
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+[data-theme="light"] .bg-white\/5,
+[data-theme="light"] .hover\:bg-white\/5:hover {
+  background-color: rgb(15 23 42 / 0.05);
+}
+[data-theme="light"] .bg-white\/10,
+[data-theme="light"] .hover\:bg-white\/10:hover {
+  background-color: rgb(15 23 42 / 0.08);
+}
+[data-theme="light"] .border-white\/10,
+[data-theme="light"] .hover\:border-white\/10:hover {
+  border-color: rgb(15 23 42 / 0.12);
+}
+[data-theme="light"] .hover\:text-white:hover {
+  color: rgb(var(--gray-50));
 }

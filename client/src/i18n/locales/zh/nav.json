@@ -97,6 +97,12 @@
     "actionScrollTop": "回到顶部",
     "actionCopyLink": "复制本页链接",
     "actionToggleSound": "声音提示",
+    "actionTheme": "使用{{theme}}主题",
+    "theme": {
+      "system": "跟随系统",
+      "light": "浅色",
+      "dark": "深色"
+    },
     "actionToggleTabby": "Tabby 助手",
     "actionProviderScope": "显示{{provider}}",
     "actionClearRecents": "清除最近命令",

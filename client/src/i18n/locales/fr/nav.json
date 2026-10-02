@@ -97,6 +97,12 @@
     "actionScrollTop": "Remonter en haut",
     "actionCopyLink": "Copier le lien de cette page",
     "actionToggleSound": "Signaux sonores",
+    "actionTheme": "Utiliser le thème {{theme}}",
+    "theme": {
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
     "actionToggleTabby": "Assistant Tabby",
     "actionProviderScope": "Afficher {{provider}}",
     "actionClearRecents": "Effacer les commandes récentes",

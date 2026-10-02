@@ -123,6 +123,7 @@
  *
  * ----------------------------------------------------------------------------- */
 
+import { THEME_PREFERENCES, type ThemePreference } from "./theme";
 import {
   Activity,
   ArrowLeft,
@@ -146,6 +147,9 @@ import {
   FolderTree,
   Github,
   Globe,
+  Monitor,
+  Moon,
+  Sun,
   Heart,
   History,
   Keyboard,
@@ -229,6 +233,8 @@ export interface PaletteContext {
   copyLink: () => void;
   language: string;
   setLanguage: (language: string) => void;
+  theme: ThemePreference;
+  setTheme: (theme: ThemePreference) => void;
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
   tabbyEnabled: boolean;
@@ -390,6 +396,7 @@ export const PAGE_COMMANDS: {
  * nowhere and nothing else would notice.
  */
 export const SETTINGS_SECTION_COMMANDS: { id: string; labelKey: string; icon: LucideIcon }[] = [
+  { id: "appearance", labelKey: "settings:appearance.title", icon: Palette },
   { id: "data-display", labelKey: "settings:display.title", icon: Layers },
   { id: "claude-pricing", labelKey: "settings:pricing.navClaude", icon: DollarSign },
   { id: "cursor-pricing", labelKey: "settings:pricing.navCursor", icon: DollarSign },
@@ -498,6 +505,11 @@ const SESSION_FILTER_COMMANDS: { status: string; labelKey: string }[] = [
   { status: "abandoned", labelKey: "sessions:filterAbandoned" },
 ];
 
+const THEME_ICONS: Record<ThemePreference, LucideIcon> = {
+  system: Monitor,
+  light: Sun,
+  dark: Moon,
+};
 const LANGUAGES = ["en", "zh", "vi", "ko", "es", "fr"] as const;
 
 const PROVIDER_SCOPES: ProviderScope[] = ["both", "claude", "codex"];
@@ -607,6 +619,15 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       group: "actions" as const,
       icon: Layers,
       run: () => ctx.setProviderScope(scope),
+    })),
+    ...THEME_PREFERENCES.map((theme) => ({
+      id: `action:theme:${theme}`,
+      label: t("nav:palette.actionTheme", { theme: t(`nav:palette.theme.${theme}`) }),
+      state: ctx.theme === theme ? t("nav:palette.active") : undefined,
+      keywords: ["theme", "appearance", "dark", "light", "mode", "system", theme],
+      group: "actions" as const,
+      icon: THEME_ICONS[theme],
+      run: () => ctx.setTheme(theme),
     })),
     ...LANGUAGES.map((language) => ({
       id: `action:language:${language}`,

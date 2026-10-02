@@ -282,7 +282,7 @@ function SparklineTooltip({
     <div
       ref={ref}
       role="tooltip"
-      className="fixed z-[60] px-2 py-1 bg-[#12121f] border border-[#2a2a4a] rounded-md shadow-xl text-[10px] text-gray-200 whitespace-nowrap pointer-events-none"
+      className="fixed z-[60] px-2 py-1 bg-tip-bg border border-tip-border rounded-md shadow-xl text-[10px] text-gray-200 whitespace-nowrap pointer-events-none"
       style={{ left: pos.left, top: pos.top }}
     >
       <span className="font-medium">{label}</span>

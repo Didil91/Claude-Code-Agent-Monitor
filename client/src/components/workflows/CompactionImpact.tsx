@@ -414,7 +414,7 @@ export function CompactionImpact({ data }: CompactionImpactProps) {
       {/* Hover tooltip (matches the app's other chart tooltips) */}
       {tip && (
         <div
-          className="fixed z-50 pointer-events-none rounded-md border border-[#2a2a4a] bg-[#12121f] px-2.5 py-1.5 text-xs shadow-xl"
+          className="fixed z-50 pointer-events-none rounded-md border border-tip-border bg-tip-bg px-2.5 py-1.5 text-xs shadow-xl"
           style={{
             left: tip.x > window.innerWidth - 220 ? tip.x - 14 : tip.x + 14,
             top: tip.y - 10,

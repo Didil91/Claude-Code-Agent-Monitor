@@ -126,6 +126,8 @@ import {
 } from "../lib/dataScope";
 import { getSoundPrefs, setSoundPrefs, subscribeToSoundPrefs } from "../lib/sound";
 import { tabbyPrefs } from "./Tabby/prefs";
+import { useThemePreference } from "../hooks/useThemePreference";
+import { setThemePreference } from "../lib/theme";
 import { usePaletteActions } from "./PaletteActionProvider";
 import { announceAction, COMMAND_PALETTE_EVENT, requestUpdateCheck } from "../lib/appEvents";
 
@@ -219,6 +221,7 @@ export function CommandPalette() {
   // and flip on the first press rather than the second.
   const [soundEnabled, setSoundEnabledState] = useState(() => getSoundPrefs().enabled);
   const [tabbyEnabled, setTabbyEnabledState] = useState(() => tabbyPrefs.getEnabled());
+  const [theme] = useThemePreference();
   // `provider` is optional on the persisted scope; "both" is the documented
   // default, so normalize once here rather than at every read site.
   const [provider, setProvider] = useState<ProviderScope>(() => getScope().provider ?? "both");
@@ -395,6 +398,13 @@ export function CommandPalette() {
         close();
         i18n.changeLanguage(language);
       },
+      theme,
+      setTheme: (next) => {
+        setThemePreference(next);
+        announceAction(
+          `${t("nav:palette.actionTheme", { theme: t(`nav:palette.theme.${next}`) })}`
+        );
+      },
       soundEnabled,
       setSoundEnabled: (enabled) => {
         setSoundPrefs({ enabled });
@@ -479,6 +489,7 @@ export function CommandPalette() {
     location.pathname,
     run,
     sidebarCollapsed,
+    theme,
     soundEnabled,
     tabbyEnabled,
     provider,

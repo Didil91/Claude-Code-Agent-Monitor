@@ -4,6 +4,16 @@
   "exportData": "데이터 내보내기",
   "acrossSessions": "추적된 모든 세션 기준",
   "basedOnUsage": "모델별 토큰 사용량 기준",
+  "appearance": {
+    "title": "모양",
+    "description": "대시보드의 모양을 선택하세요. 시스템을 선택하면 운영 체제 설정을 따릅니다.",
+    "theme": "테마",
+    "options": {
+      "system": "시스템",
+      "light": "라이트",
+      "dark": "다크"
+    }
+  },
   "tabby": {
     "title": "Tabby 도우미",
     "description": "실시간 세션에 반응하는 떠다니는 고양이입니다.",

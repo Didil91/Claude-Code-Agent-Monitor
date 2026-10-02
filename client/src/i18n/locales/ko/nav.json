@@ -97,6 +97,12 @@
     "actionScrollTop": "맨 위로 이동",
     "actionCopyLink": "이 페이지 링크 복사",
     "actionToggleSound": "소리 알림",
+    "actionTheme": "{{theme}} 테마 사용",
+    "theme": {
+      "system": "시스템",
+      "light": "라이트",
+      "dark": "다크"
+    },
     "actionToggleTabby": "Tabby 어시스턴트",
     "actionProviderScope": "{{provider}} 표시",
     "actionClearRecents": "최근 명령 지우기",

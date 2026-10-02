@@ -4,6 +4,16 @@
   "exportData": "Exporter les données",
   "acrossSessions": "Sur toutes les sessions suivies",
   "basedOnUsage": "Basé sur l'utilisation de tokens par modèle",
+  "appearance": {
+    "title": "Apparence",
+    "description": "Choisissez l'apparence du tableau de bord. « Système » suit le réglage de votre système d'exploitation.",
+    "theme": "Thème",
+    "options": {
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    }
+  },
   "tabby": {
     "title": "Compagnon Tabby",
     "description": "Un chat flottant qui réagit à vos sessions en direct.",

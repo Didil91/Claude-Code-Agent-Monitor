@@ -97,6 +97,12 @@
     "actionScrollTop": "Lên đầu trang",
     "actionCopyLink": "Sao chép liên kết trang này",
     "actionToggleSound": "Âm báo",
+    "actionTheme": "Dùng chủ đề {{theme}}",
+    "theme": {
+      "system": "Theo hệ thống",
+      "light": "Sáng",
+      "dark": "Tối"
+    },
     "actionToggleTabby": "Trợ lý Tabby",
     "actionProviderScope": "Hiện {{provider}}",
     "actionClearRecents": "Xóa các lệnh gần đây",

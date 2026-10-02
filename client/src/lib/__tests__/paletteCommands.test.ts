@@ -47,6 +47,8 @@ function makeContext(overrides: Partial<PaletteContext> = {}): PaletteContext {
     copyLink: vi.fn(),
     language: "en",
     setLanguage: vi.fn(),
+    theme: "dark",
+    setTheme: vi.fn(),
     soundEnabled: true,
     setSoundEnabled: vi.fn(),
     tabbyEnabled: true,

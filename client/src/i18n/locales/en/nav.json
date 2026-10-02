@@ -97,6 +97,12 @@
     "actionScrollTop": "Scroll to top",
     "actionCopyLink": "Copy link to this page",
     "actionToggleSound": "Sound cues",
+    "actionTheme": "Use {{theme}} theme",
+    "theme": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
     "actionToggleTabby": "Tabby assistant",
     "actionProviderScope": "Show {{provider}}",
     "actionClearRecents": "Clear recent commands",

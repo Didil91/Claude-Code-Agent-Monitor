@@ -4,6 +4,16 @@
   "exportData": "Export Data",
   "acrossSessions": "Across all tracked sessions",
   "basedOnUsage": "Based on per-model token usage",
+  "appearance": {
+    "title": "Appearance",
+    "description": "Choose how the dashboard looks. System follows your operating system setting.",
+    "theme": "Theme",
+    "options": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    }
+  },
   "tabby": {
     "title": "Tabby companion",
     "description": "A floating cat that reacts to your live sessions.",

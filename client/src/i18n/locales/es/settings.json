@@ -4,6 +4,16 @@
   "exportData": "Exportar Datos",
   "acrossSessions": "En todas las sesiones rastreadas",
   "basedOnUsage": "Basado en el uso de tokens por modelo",
+  "appearance": {
+    "title": "Apariencia",
+    "description": "Elige el aspecto del panel. «Sistema» sigue la configuración de tu sistema operativo.",
+    "theme": "Tema",
+    "options": {
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
+    }
+  },
   "tabby": {
     "title": "Compañero Tabby",
     "description": "Un gato flotante que reacciona a tus sesiones en vivo.",

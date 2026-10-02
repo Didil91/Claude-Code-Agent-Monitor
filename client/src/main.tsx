@@ -66,6 +66,9 @@ import "@fontsource/jetbrains-mono/latin-500.css";
 import App from "./App";
 import "./i18n";
 import "./index.css";
+import { initTheme } from "./lib/theme";
+
+initTheme();
 
 if ("serviceWorker" in navigator) {
   // Detect whether the page is already controlled by an SW *before* we
