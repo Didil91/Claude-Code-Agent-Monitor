@@ -51,6 +51,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Calendar, Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { getCurrentLocale } from "../lib/format";
 
 interface DateTimePickerProps {
   value: string; // Expected format: YYYY-MM-DDTHH:mm
@@ -106,7 +107,7 @@ export function DateTimePicker({
 
   const formatDisplay = (d: Date | null) => {
     if (!d || isNaN(d.getTime())) return "";
-    return d.toLocaleString(undefined, {
+    return d.toLocaleString(getCurrentLocale(), {
       month: "short",
       day: "numeric",
       hour: "2-digit",
@@ -228,7 +229,7 @@ export function DateTimePicker({
               <ChevronLeft className="w-4 h-4" />
             </button>
             <span className="text-xs font-medium text-gray-200">
-              {viewDate.toLocaleString(undefined, { month: "long", year: "numeric" })}
+              {viewDate.toLocaleString(getCurrentLocale(), { month: "long", year: "numeric" })}
             </span>
             <button
               type="button"

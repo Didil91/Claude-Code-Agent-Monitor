@@ -128,7 +128,7 @@ const SENDER_STYLES: Record<
 };
 import { ToolCallBlock } from "./ToolCallBlock";
 import { MarkdownContent } from "./MarkdownContent";
-import { fmt, formatModelName } from "../../lib/format";
+import { fmt, formatModelName, getCurrentLocale } from "../../lib/format";
 import { parseTuiSegments, stripAnsi, hasTuiTags, type TuiSegment } from "./tuiSegments";
 
 interface MessageListProps {
@@ -182,7 +182,7 @@ function isTaskNotification(text: string): boolean {
 /** Format a timestamp as compact local time (e.g. "14:23:01"). */
 function formatLocalTime(iso: string): string {
   try {
-    return new Date(iso).toLocaleTimeString();
+    return new Date(iso).toLocaleTimeString(getCurrentLocale());
   } catch {
     return "";
   }

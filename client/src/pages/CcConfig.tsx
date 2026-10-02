@@ -104,6 +104,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { api } from "../lib/api";
+import { getCurrentLocale } from "../lib/format";
 import { CodexConfigExplorer } from "../components/CodexConfigExplorer";
 import { useUrlTab } from "../hooks/usePageShortcuts";
 import { usePaletteAction } from "../components/PaletteActionProvider";
@@ -642,7 +643,7 @@ function Header({
   const { t } = useTranslation("ccConfig");
   const { t: tCommon } = useTranslation("common");
   const formatted = lastUpdated
-    ? lastUpdated.toLocaleTimeString(undefined, {
+    ? lastUpdated.toLocaleTimeString(getCurrentLocale(), {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -1665,7 +1666,7 @@ function PluginCard({ plugin: p }: { plugin: CcPlugin }) {
             {p.lastUpdated && (
               <div>
                 <span className="text-gray-600">{t("plugins.lastUpdated")}:</span>{" "}
-                {new Date(p.lastUpdated).toLocaleString()}
+                {new Date(p.lastUpdated).toLocaleString(getCurrentLocale())}
               </div>
             )}
             {p.gitCommitSha && (
@@ -1939,7 +1940,7 @@ function HooksPanel({
                 </span>
                 <span className="text-[10px] text-gray-500">{formatBytes(s.size)}</span>
                 <span className="text-[10px] text-gray-600 hidden md:inline">
-                  {new Date(s.mtime).toLocaleDateString()}
+                  {new Date(s.mtime).toLocaleDateString(getCurrentLocale())}
                 </span>
               </button>
             ))}
@@ -2874,7 +2875,7 @@ function MarketplacesPanel({
               {m.lastUpdated && (
                 <div>
                   <span className="text-gray-600">{t("marketplaces.lastUpdated")}:</span>{" "}
-                  {new Date(m.lastUpdated).toLocaleString()}
+                  {new Date(m.lastUpdated).toLocaleString(getCurrentLocale())}
                 </div>
               )}
             </div>

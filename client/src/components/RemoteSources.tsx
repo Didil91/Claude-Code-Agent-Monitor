@@ -95,6 +95,7 @@ import { eventBus } from "../lib/eventBus";
 import { isRemoteDataRefreshMessage } from "../lib/remoteDataEvents";
 import { useDataScope } from "../lib/dataScope";
 import type { ScopeMode } from "../lib/dataScope";
+import { getCurrentLocale } from "../lib/format";
 
 const EMPTY_FORM: RemoteSourceInput = {
   label: "",
@@ -716,7 +717,7 @@ export function RemoteSources() {
                     <div className="text-[11px] text-gray-600 mt-1">
                       {s.last_sync_at
                         ? t("remoteSources.lastSync", "Last sync: {{when}}", {
-                            when: new Date(s.last_sync_at).toLocaleString(),
+                            when: new Date(s.last_sync_at).toLocaleString(getCurrentLocale()),
                           })
                         : t("remoteSources.neverSynced", "Never synced")}
                       {s.last_sync_counts?.imported != null &&

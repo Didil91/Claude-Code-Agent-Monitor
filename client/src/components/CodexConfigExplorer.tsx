@@ -88,6 +88,7 @@ import {
 import { api } from "../lib/api";
 import type { CodexConfigEditableFile, CodexConfigFile, CodexConfigOverview } from "../lib/api";
 import { eventBus } from "../lib/eventBus";
+import { getCurrentLocale } from "../lib/format";
 
 type Tab =
   | "overview"
@@ -657,7 +658,7 @@ function CodexTab({
           {data.models.fetchedAt && (
             <span className="rounded-md border border-border bg-surface-1 px-2 py-1 text-[10px] text-gray-400">
               {t("codex.modelCatalogUpdated", "Catalog updated {{time}}", {
-                time: new Date(data.models.fetchedAt).toLocaleString(),
+                time: new Date(data.models.fetchedAt).toLocaleString(getCurrentLocale()),
               })}
             </span>
           )}

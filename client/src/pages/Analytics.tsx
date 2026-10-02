@@ -75,7 +75,7 @@ import { api } from "../lib/api";
 import { eventBus } from "../lib/eventBus";
 import { isRemoteDataRefreshMessage } from "../lib/remoteDataEvents";
 import { useDataScope } from "../lib/dataScope";
-import { fmt, fmtCost, fmtCostFull, formatModelName } from "../lib/format";
+import { fmt, fmtCost, fmtCostFull, formatModelName, getCurrentLocale } from "../lib/format";
 import { Tip } from "../components/Tip";
 import { PaginatedLegend } from "../components/PaginatedLegend";
 import { Skeleton, StatValueSkeleton, TextSkeleton } from "../components/Skeleton";
@@ -943,7 +943,7 @@ export function Analytics() {
                 {t("subtitle")}
                 <span className="inline-flex items-center gap-1.5 text-[11px] text-gray-500 bg-surface-2 border border-border px-2 py-0.5 rounded-md font-mono ml-2">
                   <Clock className="w-3 h-3" />
-                  {lastUpdate.toLocaleTimeString()}
+                  {lastUpdate.toLocaleTimeString(getCurrentLocale())}
                 </span>
               </p>
             </div>

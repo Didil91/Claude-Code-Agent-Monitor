@@ -16,7 +16,7 @@
  * A Settings section is titled by `settings:*` and an Agent Config tab by
  * `ccConfig:tabs.*`. The catalog reuses those keys rather than restating them
  * under `nav:palette.*`, so a page renaming a section renames it in the palette
- * too, in all five locales, with no second edit.
+ * too, in all six locales, with no second edit.
  *
  * ## What is deliberately absent
  * Destructive operations. Purging the database or deleting a session is one
@@ -498,7 +498,7 @@ const SESSION_FILTER_COMMANDS: { status: string; labelKey: string }[] = [
   { status: "abandoned", labelKey: "sessions:filterAbandoned" },
 ];
 
-const LANGUAGES = ["en", "zh", "vi", "ko", "es"] as const;
+const LANGUAGES = ["en", "zh", "vi", "ko", "es", "fr"] as const;
 
 const PROVIDER_SCOPES: ProviderScope[] = ["both", "claude", "codex"];
 

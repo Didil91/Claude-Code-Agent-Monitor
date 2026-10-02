@@ -93,6 +93,7 @@ import { SessionComplexityScatter } from "../components/workflows/SessionComplex
 import { CompactionImpact } from "../components/workflows/CompactionImpact";
 import { SessionDrillIn } from "../components/workflows/SessionDrillIn";
 import { WorkflowRunsPanel } from "../components/workflows/WorkflowRunsPanel";
+import { getCurrentLocale } from "../lib/format";
 
 type StatusFilter = "all" | "active" | "completed";
 
@@ -609,7 +610,7 @@ function PageHeader({
         {lastUpdated && (
           <span className="text-[10px] text-gray-600 ml-1">
             {t("common:updated")}
-            {lastUpdated.toLocaleTimeString()}
+            {lastUpdated.toLocaleTimeString(getCurrentLocale())}
           </span>
         )}
       </div>
