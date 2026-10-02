@@ -4,7 +4,7 @@
  */
 
 const { WebSocketServer } = require("ws");
-const { isHostAllowed, isWebSocketAuthorized } = require("./lib/security");
+const { isHostAllowed, isOriginAllowed, isWebSocketAuthorized } = require("./lib/security");
 
 let wss = null;
 
@@ -17,6 +17,9 @@ function initWebSocket(server) {
     maxPayload: 64 * 1024,
     verifyClient(info, done) {
       if (!isHostAllowed(info.req.headers.host)) return done(false, 403, "host not allowed");
+      // Browsers don't apply CORS to WebSockets: without this, any website open in
+      // the browser could connect to ws://127.0.0.1 and read live session events.
+      if (!isOriginAllowed(info.origin)) return done(false, 403, "origin not allowed");
       if (!isWebSocketAuthorized(info.req)) return done(false, 401, "unauthorized");
       return done(true);
     },

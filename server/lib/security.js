@@ -72,6 +72,23 @@ function hostGuard(req, res, next) {
 }
 
 /**
+ * Whether a browser Origin may talk to the dashboard: no Origin (curl, Node
+ * clients, same-origin navigations) or a loopback / operator-allowlisted host.
+ * Opaque ("null"), file:// and malformed origins are refused.
+ */
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  try {
+    const u = new URL(origin);
+    // LOOPBACK_HOSTS holds "" for a missing Host header; an origin needs a real host.
+    if (!u.hostname) return false;
+    return isLoopbackHostname(u.hostname) || allowedHostnames().includes(u.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+/**
  * CORS options: allow same-origin / no-Origin (curl, the server's own client)
  * and loopback origins; refuse everything else (so a cross-origin page cannot
  * read responses). Credentials stay off — the API is token- or trust-gated, not
@@ -80,19 +97,7 @@ function hostGuard(req, res, next) {
 function corsOptions() {
   return {
     origin(origin, cb) {
-      if (!origin) return cb(null, true);
-      try {
-        const u = new URL(origin);
-        if (
-          isLoopbackHostname(u.hostname) ||
-          allowedHostnames().includes(u.hostname.toLowerCase())
-        ) {
-          return cb(null, true);
-        }
-      } catch {
-        /* malformed Origin → treat as disallowed */
-      }
-      return cb(null, false);
+      return cb(null, isOriginAllowed(origin));
     },
     credentials: false,
   };
@@ -237,6 +242,7 @@ module.exports = {
   allowedHostnames,
   hostnameOf,
   isHostAllowed,
+  isOriginAllowed,
   hostGuard,
   corsOptions,
   getDashboardToken,
