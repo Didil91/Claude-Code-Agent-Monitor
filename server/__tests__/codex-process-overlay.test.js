@@ -101,43 +101,50 @@ describe("interactive Codex command classification", () => {
     }
   });
 
-  it("prefers the open resumed rollout over the newer startup writer lock", () => {
-    const lockRoot = "/tmp/codex-home/thread-writer-locks";
-    const startupId = "019fdf72-0107-7e90-9cc2-7741580c4ce5";
-    const resumedId = "019fdab4-3502-7792-9d95-cd5ef25b0e1d";
-    const processes = processInfosFromLsof(
-      new Map([[60182, "codex --yolo"]]),
-      [
-        "p60182",
-        "fcwd",
-        "n/workspace/launch",
-        "f43",
-        `n/tmp/codex-home/sessions/2026/08/06/rollout-2026-08-06T22-31-11-${resumedId}.jsonl`,
-        "f44",
-        `n${lockRoot}/${resumedId}.lock`,
-        "f46",
-        `n${lockRoot}/${startupId}.lock`,
-      ].join("\n"),
-      {
-        lockRoot,
-        sessionsRoot: "/tmp/codex-home/sessions",
-        statFile(filename) {
-          return {
-            birthtimeMs: filename.includes(startupId) ? 2_000 : 1_000,
-            mtimeMs: filename.includes(startupId) ? 2_000 : 1_000,
-          };
-        },
-      }
-    );
+  it(
+    "prefers the open resumed rollout over the newer startup writer lock",
+    {
+      // lsof output is POSIX; the overlay itself is disabled on Windows (probeDisabled).
+      skip: process.platform === "win32" && "the Codex process overlay does not run on Windows",
+    },
+    () => {
+      const lockRoot = "/tmp/codex-home/thread-writer-locks";
+      const startupId = "019fdf72-0107-7e90-9cc2-7741580c4ce5";
+      const resumedId = "019fdab4-3502-7792-9d95-cd5ef25b0e1d";
+      const processes = processInfosFromLsof(
+        new Map([[60182, "codex --yolo"]]),
+        [
+          "p60182",
+          "fcwd",
+          "n/workspace/launch",
+          "f43",
+          `n/tmp/codex-home/sessions/2026/08/06/rollout-2026-08-06T22-31-11-${resumedId}.jsonl`,
+          "f44",
+          `n${lockRoot}/${resumedId}.lock`,
+          "f46",
+          `n${lockRoot}/${startupId}.lock`,
+        ].join("\n"),
+        {
+          lockRoot,
+          sessionsRoot: "/tmp/codex-home/sessions",
+          statFile(filename) {
+            return {
+              birthtimeMs: filename.includes(startupId) ? 2_000 : 1_000,
+              mtimeMs: filename.includes(startupId) ? 2_000 : 1_000,
+            };
+          },
+        }
+      );
 
-    assert.deepEqual(processes, [
-      {
-        pid: 60182,
-        cwd: "/workspace/launch",
-        sessionId: resumedId,
-      },
-    ]);
-  });
+      assert.deepEqual(processes, [
+        {
+          pid: 60182,
+          cwd: "/workspace/launch",
+          sessionId: resumedId,
+        },
+      ]);
+    }
+  );
 
   it("falls back to the newest writer lock before a rollout is open", () => {
     const lockRoot = "/tmp/codex-home/thread-writer-locks";

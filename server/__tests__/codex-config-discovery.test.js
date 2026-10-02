@@ -78,6 +78,7 @@ fs.writeFileSync(
 
 const discovery = require("../lib/codex-config-discovery");
 const mutate = require("../lib/codex-config-mutate");
+const { symlinkSkip } = require("./helpers/symlinks");
 
 describe("codex config discovery", () => {
   after(() => {
@@ -230,7 +231,7 @@ describe("codex config discovery", () => {
     );
   });
 
-  it("does not follow an allowlisted configuration symlink", () => {
+  it("does not follow an allowlisted configuration symlink", symlinkSkip, () => {
     const hooked = path.join(HOME, "hooks.json");
     const outside = path.join(os.tmpdir(), `codex-config-outside-${process.pid}.json`);
     fs.writeFileSync(outside, "{}\n");
@@ -242,7 +243,7 @@ describe("codex config discovery", () => {
     fs.rmSync(outside, { force: true });
   });
 
-  it("rejects a symlinked parent that escapes the Codex skills root", () => {
+  it("rejects a symlinked parent that escapes the Codex skills root", symlinkSkip, () => {
     const outside = fs.mkdtempSync(path.join(os.tmpdir(), "codex-config-parent-"));
     const linkedSkill = path.join(HOME, "skills", "linked");
     fs.symlinkSync(outside, linkedSkill, "dir");

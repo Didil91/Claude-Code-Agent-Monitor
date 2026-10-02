@@ -28,6 +28,12 @@ const { codexHomeChangeTriggersSweep } = require("../index");
 const { findCodexTranscripts } = require("../lib/codex-ingest");
 
 after(() => {
+  // Close the dashboard DB first: Windows cannot unlink an open SQLite file (EBUSY).
+  try {
+    require("../db").db.close();
+  } catch {
+    /* already closed */
+  }
   fs.rmSync(TMP_ROOT, { recursive: true, force: true });
 });
 

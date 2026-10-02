@@ -161,7 +161,8 @@ describe("remote-sync validateSourceInput", () => {
       host: "a",
       identity_file: "/home/u/.ssh/id-ed25519",
     });
-    assert.equal(v.identityFile, "/home/u/.ssh/id-ed25519");
+    // identity_file is a local path: validation converts it to this OS's separators.
+    assert.equal(v.identityFile, path.normalize("/home/u/.ssh/id-ed25519"));
   });
 });
 

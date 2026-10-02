@@ -16,6 +16,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { symlinkSkip } = require("./helpers/symlinks");
 const {
   parseFrontmatter,
   redactSettings,
@@ -221,7 +222,7 @@ describe("isUnder", () => {
 });
 
 describe("readSkills (symlinked skill directories)", () => {
-  it("includes a skill directory that is a symlink to a real directory", () => {
+  it("includes a skill directory that is a symlink to a real directory", symlinkSkip, () => {
     // Dirent.isDirectory() returns false for a symlink even when it points
     // to a directory (Node fs quirk) — readSkillsAt must still follow it.
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-discovery-symlink-"));
@@ -241,7 +242,7 @@ describe("readSkills (symlinked skill directories)", () => {
     assert.ok(names.includes("second-brain"), `expected symlinked skill in ${names}`);
   });
 
-  it("skips a broken symlink without throwing", () => {
+  it("skips a broken symlink without throwing", symlinkSkip, () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-discovery-broken-symlink-"));
     const projectRoot = path.join(tmp, "project");
     const skillsDir = path.join(projectRoot, ".claude", "skills");
@@ -257,7 +258,7 @@ describe("readSkills (symlinked skill directories)", () => {
 });
 
 describe("readAgents (symlinked markdown files)", () => {
-  it("includes an agent .md that is a symlink to a real file", () => {
+  it("includes an agent .md that is a symlink to a real file", symlinkSkip, () => {
     // Same Dirent quirk as symlinked skill directories, but for files:
     // ent.isFile() is false for a symlink pointing at a regular file, so a
     // version-controlled agent linked into .claude/agents/ was invisible.
@@ -275,7 +276,7 @@ describe("readAgents (symlinked markdown files)", () => {
     assert.ok(names.includes("reviewer"), `expected symlinked agent in ${names}`);
   });
 
-  it("skips a broken .md symlink without throwing", () => {
+  it("skips a broken .md symlink without throwing", symlinkSkip, () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-discovery-file-broken-"));
     const projectRoot = path.join(tmp, "project");
     const agentsDir = path.join(projectRoot, ".claude", "agents");
@@ -298,18 +299,22 @@ describe("isFileLike", () => {
     assert.equal(isFileLike(ent, path.join(tmp, ent.name)), true);
   });
 
-  it("true for a symlink resolving to a file, false for one resolving to a directory", () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-isfilelike-sym-"));
-    fs.writeFileSync(path.join(tmp, "real.md"), "x");
-    fs.mkdirSync(path.join(tmp, "realdir"));
-    fs.symlinkSync(path.join(tmp, "real.md"), path.join(tmp, "file-link.md"), "file");
-    fs.symlinkSync(path.join(tmp, "realdir"), path.join(tmp, "dir-link"), "dir");
-    const ents = Object.fromEntries(
-      fs.readdirSync(tmp, { withFileTypes: true }).map((e) => [e.name, e])
-    );
-    assert.equal(isFileLike(ents["file-link.md"], path.join(tmp, "file-link.md")), true);
-    assert.equal(isFileLike(ents["dir-link"], path.join(tmp, "dir-link")), false);
-  });
+  it(
+    "true for a symlink resolving to a file, false for one resolving to a directory",
+    symlinkSkip,
+    () => {
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-isfilelike-sym-"));
+      fs.writeFileSync(path.join(tmp, "real.md"), "x");
+      fs.mkdirSync(path.join(tmp, "realdir"));
+      fs.symlinkSync(path.join(tmp, "real.md"), path.join(tmp, "file-link.md"), "file");
+      fs.symlinkSync(path.join(tmp, "realdir"), path.join(tmp, "dir-link"), "dir");
+      const ents = Object.fromEntries(
+        fs.readdirSync(tmp, { withFileTypes: true }).map((e) => [e.name, e])
+      );
+      assert.equal(isFileLike(ents["file-link.md"], path.join(tmp, "file-link.md")), true);
+      assert.equal(isFileLike(ents["dir-link"], path.join(tmp, "dir-link")), false);
+    }
+  );
 });
 
 describe("module exports", () => {

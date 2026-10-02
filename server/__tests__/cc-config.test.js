@@ -178,6 +178,7 @@ const TEST_DB = path.join(TMP, "dashboard-test.db");
 process.env.DASHBOARD_DB_PATH = TEST_DB;
 
 const { createApp } = require("../index");
+const { symlinkSkip } = require("./helpers/symlinks");
 
 let server;
 let BASE;
@@ -432,18 +433,22 @@ describe("/api/cc-config", () => {
     assert.equal(body.error.code, "READ_DENIED");
   });
 
-  it("file endpoint blocks symlinks inside an allowed root that escape outside", async () => {
-    const outside = path.join(TMP, "outside-secret.md");
-    const linked = path.join(FAKE_HOME, "agents", "linked-secret.md");
-    fs.writeFileSync(outside, "outside secret");
-    fs.symlinkSync(outside, linked);
-    const { status, body } = await fetchJson(
-      `/api/cc-config/file?cwd=${encodeURIComponent(FAKE_PROJECT)}&path=${encodeURIComponent(linked)}`
-    );
-    assert.equal(status, 400);
-    assert.equal(body.error.code, "READ_DENIED");
-    fs.unlinkSync(linked);
-  });
+  it(
+    "file endpoint blocks symlinks inside an allowed root that escape outside",
+    symlinkSkip,
+    async () => {
+      const outside = path.join(TMP, "outside-secret.md");
+      const linked = path.join(FAKE_HOME, "agents", "linked-secret.md");
+      fs.writeFileSync(outside, "outside secret");
+      fs.symlinkSync(outside, linked);
+      const { status, body } = await fetchJson(
+        `/api/cc-config/file?cwd=${encodeURIComponent(FAKE_PROJECT)}&path=${encodeURIComponent(linked)}`
+      );
+      assert.equal(status, 400);
+      assert.equal(body.error.code, "READ_DENIED");
+      fs.unlinkSync(linked);
+    }
+  );
 
   it("file endpoint blocks .. traversal", async () => {
     const tricky = path.join(FAKE_HOME, "..", "..", "etc", "passwd");
