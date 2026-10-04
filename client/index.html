@@ -7,8 +7,8 @@
       try {
         var p = localStorage.getItem("theme");
         var light =
-          p === "light" ||
-          (p === "system" && window.matchMedia("(prefers-color-scheme: light)").matches);
+          p !== "dark" &&
+          !(p === "system" && !window.matchMedia("(prefers-color-scheme: light)").matches);
         var r = document.documentElement;
         r.setAttribute("data-theme", light ? "light" : "dark");
         r.classList.toggle("dark", !light);

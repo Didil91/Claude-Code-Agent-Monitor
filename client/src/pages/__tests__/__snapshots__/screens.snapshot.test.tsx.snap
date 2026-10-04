@@ -7943,8 +7943,8 @@ exports[`screen snapshots > Settings 1`] = `
             System
           </button>
           <button
-            aria-checked="false"
-            class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors text-gray-400 hover:bg-surface-4 hover:text-gray-200"
+            aria-checked="true"
+            class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors bg-accent text-white"
             role="radio"
             type="button"
           >
@@ -7993,8 +7993,8 @@ exports[`screen snapshots > Settings 1`] = `
             Light
           </button>
           <button
-            aria-checked="true"
-            class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors bg-accent text-white"
+            aria-checked="false"
+            class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors text-gray-400 hover:bg-surface-4 hover:text-gray-200"
             role="radio"
             type="button"
           >

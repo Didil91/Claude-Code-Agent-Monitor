@@ -32,12 +32,12 @@ describe("parseThemePreference", () => {
     expect(parseThemePreference("dark")).toBe("dark");
   });
 
-  it("falls back to the dark default for anything else", () => {
-    expect(DEFAULT_THEME_PREFERENCE).toBe("dark");
-    expect(parseThemePreference(null)).toBe("dark");
-    expect(parseThemePreference("")).toBe("dark");
-    expect(parseThemePreference("Light")).toBe("dark");
-    expect(parseThemePreference(42)).toBe("dark");
+  it("falls back to the light default for anything else", () => {
+    expect(DEFAULT_THEME_PREFERENCE).toBe("light");
+    expect(parseThemePreference(null)).toBe("light");
+    expect(parseThemePreference("")).toBe("light");
+    expect(parseThemePreference("Dark")).toBe("light");
+    expect(parseThemePreference(42)).toBe("light");
   });
 });
 
@@ -61,13 +61,13 @@ describe("persistence and application", () => {
     mockSystemLight(false);
   });
 
-  it("defaults to dark when nothing is stored", () => {
-    expect(getThemePreference()).toBe("dark");
+  it("defaults to light when nothing is stored", () => {
+    expect(getThemePreference()).toBe("light");
   });
 
   it("ignores a corrupt stored value", () => {
     localStorage.setItem(THEME_STORAGE_KEY, "purple");
-    expect(getThemePreference()).toBe("dark");
+    expect(getThemePreference()).toBe("light");
   });
 
   it("persists, applies and notifies on set", () => {
