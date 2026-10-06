@@ -716,18 +716,10 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       icon: Github,
       run: () =>
         window.open(
-          "https://github.com/hoangsonww/Claude-Code-Agent-Monitor",
+          "https://github.com/Didil91/Claude-Code-Agent-Monitor",
           "_blank",
           "noopener,noreferrer"
         ),
-    },
-    {
-      id: "action:website",
-      label: t("nav:website"),
-      detail: "sonnguyenhoang.com",
-      group: "actions",
-      icon: Globe,
-      run: () => window.open("https://sonnguyenhoang.com", "_blank", "noopener,noreferrer"),
     },
     {
       id: "action:api-docs",
@@ -747,7 +739,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       icon: Github,
       run: () =>
         window.open(
-          "https://github.com/hoangsonww/Claude-Code-Agent-Monitor/issues/new",
+          "https://github.com/Didil91/Claude-Code-Agent-Monitor/issues/new",
           "_blank",
           "noopener,noreferrer"
         ),
@@ -761,7 +753,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       icon: History,
       run: () =>
         window.open(
-          "https://github.com/hoangsonww/Claude-Code-Agent-Monitor/releases",
+          "https://github.com/Didil91/Claude-Code-Agent-Monitor/releases",
           "_blank",
           "noopener,noreferrer"
         ),

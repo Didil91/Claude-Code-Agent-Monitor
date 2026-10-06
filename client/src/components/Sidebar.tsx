@@ -343,7 +343,6 @@ function CollapsedLanguagePicker({
 
 export function Sidebar({ wsConnected, collapsed, onToggle }: SidebarProps) {
   const { t, i18n } = useTranslation();
-  const websiteLabel = "sonnguyenhoang.com";
   // Track whether nav items are clipped by overflow so we can render
   // chevron affordances pointing toward the hidden items. Recomputed on
   // scroll, resize, and any structural change (e.g. collapse toggle).
@@ -774,7 +773,7 @@ export function Sidebar({ wsConnected, collapsed, onToggle }: SidebarProps) {
         {!collapsed && (
           <div className="space-y-1.5">
             <a
-              href="https://github.com/hoangsonww"
+              href="https://github.com/Didil91/Claude-Code-Agent-Monitor"
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-2 text-xs text-gray-300 hover:text-gray-200 hover:bg-surface-3 hover:border-border transition-colors"
@@ -785,24 +784,12 @@ export function Sidebar({ wsConnected, collapsed, onToggle }: SidebarProps) {
               </span>
               <span className="font-medium">{t("nav:github")}</span>
             </a>
-            <a
-              href="https://sonnguyenhoang.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-2 text-xs text-gray-300 hover:text-gray-200 hover:bg-surface-3 hover:border-border transition-colors"
-              title={websiteLabel}
-            >
-              <span className="w-6 h-6 rounded-md bg-surface-3 flex items-center justify-center">
-                <Globe className="w-3.5 h-3.5 flex-shrink-0" />
-              </span>
-              <span className="font-medium text-gray-300 truncate">{websiteLabel}</span>
-            </a>
           </div>
         )}
         {collapsed && (
           <div className="flex flex-col items-center gap-2 pt-0.5">
             <a
-              href="https://github.com/hoangsonww"
+              href="https://github.com/Didil91/Claude-Code-Agent-Monitor"
               target="_blank"
               rel="noopener noreferrer"
               className="w-8 h-8 rounded-md border border-transparent flex items-center justify-center text-gray-400 hover:text-gray-300 hover:bg-surface-3 hover:border-border transition-colors"
@@ -810,16 +797,6 @@ export function Sidebar({ wsConnected, collapsed, onToggle }: SidebarProps) {
               aria-label={t("nav:github")}
             >
               <Github className="w-3.5 h-3.5" />
-            </a>
-            <a
-              href="https://sonnguyenhoang.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-8 h-8 rounded-md border border-transparent flex items-center justify-center text-gray-400 hover:text-gray-300 hover:bg-surface-3 hover:border-border transition-colors"
-              title={websiteLabel}
-              aria-label={websiteLabel}
-            >
-              <Globe className="w-3.5 h-3.5" />
             </a>
           </div>
         )}
