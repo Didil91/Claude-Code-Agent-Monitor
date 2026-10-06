@@ -8,7 +8,7 @@
   "tagline": "Rien de ce que font vos agents ne reste dans l'ombre.",
   "sub1": "Observabilité en temps réel des sessions Claude Code, Cursor et Codex.",
   "sub2": "Tokens, outils, coûts et workflows, le tout en direct.",
-  "brand": "Claude Code Monitor",
+  "brand": "Agent Monitor",
   "provider": {
     "title": "Que souhaitez-vous surveiller ?",
     "description": "Choisissez la source de données affichée dans tout le tableau de bord. Vous pourrez la modifier plus tard dans les paramètres.",

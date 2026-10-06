@@ -715,11 +715,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       group: "actions",
       icon: Github,
       run: () =>
-        window.open(
-          "https://github.com/Didil91/Claude-Code-Agent-Monitor",
-          "_blank",
-          "noopener,noreferrer"
-        ),
+        window.open("https://github.com/Didil91/agent-monitor", "_blank", "noopener,noreferrer"),
     },
     {
       id: "action:api-docs",
@@ -739,7 +735,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       icon: Github,
       run: () =>
         window.open(
-          "https://github.com/Didil91/Claude-Code-Agent-Monitor/issues/new",
+          "https://github.com/Didil91/agent-monitor/issues/new",
           "_blank",
           "noopener,noreferrer"
         ),
@@ -753,7 +749,7 @@ export function buildPaletteCommands(ctx: PaletteContext): PaletteCommand[] {
       icon: History,
       run: () =>
         window.open(
-          "https://github.com/Didil91/Claude-Code-Agent-Monitor/releases",
+          "https://github.com/Didil91/agent-monitor/releases",
           "_blank",
           "noopener,noreferrer"
         ),
