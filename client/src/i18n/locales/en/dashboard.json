@@ -72,6 +72,9 @@
       "disabled": "The metrics sensor is not running on this server.",
       "error": "Could not load the machine metrics.",
       "gpuUnavailable": "GPU sensor unavailable — restarting."
+    },
+    "pill": {
+      "open": "Machine metrics — open the Machine tab"
     }
   },
   "braise": {

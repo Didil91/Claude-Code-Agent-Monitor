@@ -4762,10 +4762,10 @@ exports[`screen snapshots > Dashboard 1`] = `
       class="flex flex-wrap items-center justify-between gap-3"
     >
       <div
-        class="flex items-center gap-3"
+        class="flex items-center gap-3 min-w-0"
       >
         <div
-          class="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center"
+          class="w-9 h-9 rounded-xl bg-accent/15 flex-shrink-0 flex items-center justify-center"
         >
           <svg
             class="lucide lucide-layout-dashboard w-4.5 h-4.5 text-accent"
@@ -4809,9 +4809,11 @@ exports[`screen snapshots > Dashboard 1`] = `
             />
           </svg>
         </div>
-        <div>
+        <div
+          class="min-w-0"
+        >
           <div
-            class="flex items-center gap-2"
+            class="flex flex-wrap items-center gap-2 min-w-0"
           >
             <h1
               class="text-lg font-semibold text-gray-100"

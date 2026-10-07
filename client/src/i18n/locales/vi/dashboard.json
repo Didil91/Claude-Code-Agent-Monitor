@@ -72,6 +72,9 @@
       "disabled": "Cảm biến chỉ số không chạy trên máy chủ này.",
       "error": "Không tải được chỉ số máy.",
       "gpuUnavailable": "Cảm biến GPU không khả dụng — đang khởi động lại."
+    },
+    "pill": {
+      "open": "Chỉ số máy — mở tab Máy"
     }
   },
   "braise": {

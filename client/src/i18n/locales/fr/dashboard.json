@@ -72,6 +72,9 @@
       "disabled": "Le capteur de métriques ne tourne pas sur ce serveur.",
       "error": "Impossible de charger les métriques de la machine.",
       "gpuUnavailable": "Capteur GPU indisponible — redémarrage en cours."
+    },
+    "pill": {
+      "open": "Métriques de la machine — ouvrir l’onglet Machine"
     }
   },
   "braise": {
