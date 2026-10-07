@@ -3,8 +3,10 @@
  * @description Presentational body of the dashboard's Machine tab: AppControl-style
  * metric tabs (CPU, RAM, disk, GPU when present, processes) with live value and
  * sparkline, the big 5-minute chart of the selected metric with a detail line,
+ * agent markers (session start / end, long shell commands) labelled on the chart,
  * the top-process table, and a readable banner when the sensor is starting,
- * unavailable, unsupported or disabled. Pure — fed by `useMachineMetrics`.
+ * unavailable, unsupported or disabled. Pure — fed by `useMachineMetrics` and
+ * `useAgentMarkers`.
  */
 
 import { useTranslation } from "react-i18next";
@@ -26,9 +28,23 @@ import { LEVEL_TEXT_CLASS, thresholdLevel } from "../../lib/machineThresholds";
 import type { MachineMetricsState } from "../../hooks/useMachineMetrics";
 import type { MachineSample } from "../../lib/types";
 import { Sparkline } from "./Sparkline";
-import { MachineChart } from "./MachineChart";
+import { MachineChart, type ChartMarker } from "./MachineChart";
 import { TopProcesses } from "./TopProcesses";
-import { formatBytes, formatCelsius, formatInteger, formatPercent } from "./machineFormat";
+import {
+  formatBytes,
+  formatCelsius,
+  formatClockSeconds,
+  formatDuration,
+  formatInteger,
+  formatPercent,
+} from "./machineFormat";
+import {
+  markerSessionName,
+  markersInWindow,
+  truncateCommand,
+  type AgentMarker,
+} from "../../lib/machineMarkers";
+import type { MarkerSessions } from "../../hooks/useAgentMarkers";
 
 interface MachineViewProps {
   state: MachineMetricsState;
@@ -36,7 +52,39 @@ interface MachineViewProps {
   onSelect: (metric: MachineMetric) => void;
   sort: ProcessSort;
   onSortChange: (sort: ProcessSort) => void;
+  /** Agent markers (any time range; only the chart window is drawn). */
+  markers?: readonly AgentMarker[];
+  /** Known sessions, to name the markers. */
+  markerSessions?: MarkerSessions;
 }
+
+/** Translate markers inside the chart window into labelled chart markers. */
+export function chartMarkers(
+  markers: readonly AgentMarker[],
+  sessions: MarkerSessions,
+  endTs: number,
+  windowMs: number,
+  t: TFunction<"dashboard">,
+  lng: string
+): ChartMarker[] {
+  return markersInWindow(markers, endTs, windowMs).map((m) => {
+    const time = formatClockSeconds(m.ts, lng);
+    const title =
+      m.kind === "command"
+        ? t("machine.markers.command", { time, duration: formatDuration(m.durationMs ?? 0, lng) })
+        : t(`machine.markers.${m.kind}`, { time });
+    return {
+      id: m.id,
+      ts: m.ts,
+      kind: m.kind,
+      title,
+      session: markerSessionName(m, sessions),
+      detail: m.kind === "command" && m.command ? truncateCommand(m.command) : undefined,
+    };
+  });
+}
+
+const NO_SESSIONS: MarkerSessions = new Map();
 
 /** % axis bound for the processes curve: at least 10 %, rounded up to a tens step. */
 function processesMax(points: readonly SeriesPoint[]): number {
@@ -138,7 +186,15 @@ function detailLine(
   return parts;
 }
 
-export function MachineView({ state, selected, onSelect, sort, onSortChange }: MachineViewProps) {
+export function MachineView({
+  state,
+  selected,
+  onSelect,
+  sort,
+  onSortChange,
+  markers = [],
+  markerSessions = NO_SESSIONS,
+}: MachineViewProps) {
   const { t, i18n } = useTranslation("dashboard");
   const lng = i18n.language;
   const latest = state.samples[state.samples.length - 1];
@@ -250,6 +306,7 @@ export function MachineView({ state, selected, onSelect, sort, onSortChange }: M
           emptyLabel={t("machine.noData")}
           temperatureLabel={t("machine.temperature")}
           loadLabel={t("machine.load")}
+          markers={chartMarkers(markers, markerSessions, endTs, state.windowMs, t, lng)}
         />
       </div>
 

@@ -40,6 +40,11 @@
     "temperature": "Nhiệt độ",
     "load": "Tải",
     "noData": "Chưa có số đo",
+    "markers": {
+      "sessionStart": "Bắt đầu phiên · {{time}}",
+      "sessionEnd": "Kết thúc phiên · {{time}}",
+      "command": "Lệnh hoàn tất · {{time}} · {{duration}}"
+    },
     "details": {
       "cores": "Số nhân: {{n}}",
       "ram": "Đang dùng {{used}} / {{total}}",

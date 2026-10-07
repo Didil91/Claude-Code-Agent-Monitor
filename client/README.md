@@ -226,12 +226,14 @@ client/
 │   │   ├── format.ts       # Formatters (formatTime, timeAgo, fmtCost)
 │   │   ├── machine.ts      # Machine-mode metric helpers (series, levels, top processes, claude detection)
 │   │   ├── machineThresholds.ts # Machine-mode orange/red thresholds (single source)
+│   │   ├── machineMarkers.ts # Machine-chart agent markers (session start/end, long shell commands)
 │   │   ├── sound.ts        # Web Audio cue synthesis + sound preferences
 │   │   └── types.ts        # TypeScript type definitions
 │   │
 │   ├── hooks/
 │   │   ├── useWebSocket.ts      # Auto-reconnecting WebSocket hook
 │   │   ├── useMachineMetrics.ts # GET /api/machine + live machine.sample window
+│   │   ├── useAgentMarkers.ts # Stored events of the 5-min window → Machine-chart agent markers
 │   │   ├── useNotifications.ts  # Browser push notification triggers
 │   │   └── useSoundCues.ts      # Event-bus → synthesized audio cues
 │   │
@@ -401,6 +403,14 @@ Third Dashboard tab (`/?tab=machine`, also in the command palette under Views), 
   tab opens.
 - **Big chart** — the selected metric over the last 5 minutes (d3 scales and shapes rendered as React SVG):
   accent-gradient area, % axis, minute ticks, dashed GPU temperature on its own °C axis.
+- **Agent markers** — thin 1 px vertical lines under the curve (reduced opacity) at each session start
+  (`text-emerald-400`), session end (`text-gray-400`) and end of a Bash/PowerShell command that ran for at
+  least 10 s (`text-sky-400`, `LONG_COMMAND_MS`). Hovering or focusing one shows the time, the session name
+  and, for a command, its duration and text truncated to 80 characters. Read from already-stored events
+  ([`src/hooks/useAgentMarkers.ts`](src/hooks/useAgentMarkers.ts): `GET /api/events` for the window, names
+  from `GET /api/sessions`); a matching `new_event` message triggers a reload of the window because it carries
+  no command or duration. Command duration is the hook's `duration_ms`, else the gap since the `PreToolUse`
+  sharing its `tool_use_id`. Selection logic: [`src/lib/machineMarkers.ts`](src/lib/machineMarkers.ts).
 - **Top processes** — the 8 heaviest, sorted by CPU or RAM from the column headers; `claude` rows carry a badge.
 - **Thresholds** — [`src/lib/machineThresholds.ts`](src/lib/machineThresholds.ts) is the single source
   (CPU 70/90 %, RAM 80/92 %, disk 80/95 %, GPU 75/85 °C, orange/red). Values take `text-orange-300` /
@@ -412,7 +422,7 @@ Third Dashboard tab (`/?tab=machine`, also in the command palette under Views), 
 Validate with:
 
 ```bash
-cd client && npx vitest run src/components/machine src/lib/__tests__/machine.test.ts src/hooks/__tests__/useMachineMetrics.test.tsx
+cd client && npx vitest run src/components/machine src/lib/__tests__/machine.test.ts src/lib/__tests__/machineMarkers.test.ts src/hooks/__tests__/useMachineMetrics.test.tsx src/hooks/__tests__/useAgentMarkers.test.tsx
 ```
 
 ---

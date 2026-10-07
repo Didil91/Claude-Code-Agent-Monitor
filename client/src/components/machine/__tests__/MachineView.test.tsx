@@ -3,7 +3,8 @@
  * @description Renders the Machine tab body from fixed host samples: metric tabs
  * (values, threshold colours, GPU only when present, selection), the big chart,
  * the top-process list (8 rows, CPU / RAM sort, claude badge), the sensor status
- * banner, and checks the Machine-mode strings exist in French and English.
+ * banner, the agent markers and their hover labels, and checks the Machine-mode
+ * strings exist in French and English.
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -13,6 +14,7 @@ import { MachineView } from "../MachineView";
 import type { MachineMetricsState } from "../../../hooks/useMachineMetrics";
 import type { MachineProcess, MachineSample } from "../../../lib/types";
 import type { MachineMetric, ProcessSort } from "../../../lib/machine";
+import type { AgentMarker } from "../../../lib/machineMarkers";
 
 const T0 = 1_791_364_000_000;
 
@@ -74,7 +76,12 @@ function state(over: Partial<MachineMetricsState> = {}): MachineMetricsState {
 
 function renderView(
   s: MachineMetricsState,
-  opts: { selected?: MachineMetric; sort?: ProcessSort } = {}
+  opts: {
+    selected?: MachineMetric;
+    sort?: ProcessSort;
+    markers?: AgentMarker[];
+    sessions?: Map<string, { name: string | null; cwd: string | null }>;
+  } = {}
 ) {
   const onSelect = vi.fn();
   const onSortChange = vi.fn();
@@ -85,6 +92,8 @@ function renderView(
       onSelect={onSelect}
       sort={opts.sort ?? "cpu"}
       onSortChange={onSortChange}
+      markers={opts.markers}
+      markerSessions={opts.sessions}
     />
   );
   return { onSelect, onSortChange };
@@ -208,6 +217,66 @@ describe("MachineView", () => {
     expect(screen.getByText("Processus les plus gourmands")).toBeInTheDocument();
     // French percent formatting uses a (narrow) no-break space before %.
     expect(screen.getByTestId("machine-value-cpu").textContent).toMatch(/^22\s%$/);
+  });
+});
+
+describe("MachineView agent markers", () => {
+  // Chart window ends at the last sample (T0 + 4 s) and spans 5 minutes.
+  const END = T0 + 4000;
+  const markers: AgentMarker[] = [
+    { id: "old", kind: "sessionStart", ts: END - 300_001, sessionId: "s1", project: null },
+    { id: "start", kind: "sessionStart", ts: END - 60_000, sessionId: "s1", project: "proj" },
+    {
+      id: "cmd",
+      kind: "command",
+      ts: END - 1000,
+      sessionId: "s2",
+      project: "other",
+      command: `npm run build && ${"x".repeat(120)}`,
+      durationMs: 75_000,
+    },
+    { id: "end", kind: "sessionEnd", ts: END, sessionId: "s3", project: null },
+  ];
+  const sessions = new Map([["s1", { name: "Fix the chart", cwd: "/p" }]]);
+
+  it("draws one 1 px line per marker inside the window", () => {
+    renderView(state(), { markers, sessions });
+    const lines = screen.getAllByTestId("machine-marker");
+    expect(lines.map((l) => l.getAttribute("data-kind"))).toEqual([
+      "sessionStart",
+      "command",
+      "sessionEnd",
+    ]);
+    for (const line of lines) {
+      expect(line).toHaveAttribute("stroke-width", "1");
+      expect(Number(line.getAttribute("stroke-opacity"))).toBeLessThan(1);
+    }
+    expect(screen.queryByTestId("machine-marker-label")).not.toBeInTheDocument();
+  });
+
+  it("shows the session name and the truncated command on hover", () => {
+    renderView(state(), { markers, sessions });
+    const hits = screen.getAllByTestId("machine-marker-hit");
+    const hit = (i: number) => hits[i] as HTMLElement;
+
+    fireEvent.mouseEnter(hit(0));
+    let label = screen.getByTestId("machine-marker-label");
+    expect(label).toHaveTextContent(/^Session start · /);
+    expect(label).toHaveTextContent("Fix the chart");
+    fireEvent.mouseLeave(hit(0));
+    expect(screen.queryByTestId("machine-marker-label")).not.toBeInTheDocument();
+
+    fireEvent.mouseEnter(hit(1));
+    label = screen.getByTestId("machine-marker-label");
+    expect(label).toHaveTextContent(/^Command finished · .* · 1 min 15 sec/);
+    expect(label).toHaveTextContent("other");
+    const command = within(label).getByText(/^npm run build && x+…$/);
+    expect(command.textContent).toHaveLength(80);
+
+    fireEvent.focus(hit(2));
+    label = screen.getByTestId("machine-marker-label");
+    expect(label).toHaveTextContent(/^Session end · /);
+    expect(label).toHaveTextContent("s3");
   });
 });
 

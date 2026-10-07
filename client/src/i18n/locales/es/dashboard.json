@@ -40,6 +40,11 @@
     "temperature": "Temperatura",
     "load": "Carga",
     "noData": "Aún no hay lecturas",
+    "markers": {
+      "sessionStart": "Inicio de sesión · {{time}}",
+      "sessionEnd": "Fin de sesión · {{time}}",
+      "command": "Comando terminado · {{time}} · {{duration}}"
+    },
     "details": {
       "cores": "Núcleos: {{n}}",
       "ram": "{{used}} de {{total}} en uso",

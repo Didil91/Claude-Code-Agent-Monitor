@@ -1,7 +1,7 @@
 /**
  * @file machineFormat.ts
  * @description Locale-aware number formatting for the Machine mode — percentages,
- * temperatures, byte sizes and clock times — built on `Intl` so every supported
+ * temperatures, byte sizes, clock times and short durations — built on `Intl` so every supported
  * dashboard language gets its own separators and spacing (e.g. `20 %` in French).
  */
 
@@ -51,4 +51,26 @@ export function formatClock(ts: number, lng: string): string {
 /** Plain integer (`12`). */
 export function formatInteger(value: number, lng: string): string {
   return new Intl.NumberFormat(lng, { maximumFractionDigits: 0 }).format(value);
+}
+
+/** `HH:MM:SS` clock label for a precise instant (marker tooltips). */
+export function formatClockSeconds(ts: number, lng: string): string {
+  return new Date(ts).toLocaleTimeString(lng, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+/** Short duration: `12 s` under a minute, else `2 min 5 s` (locale unit names). */
+export function formatDuration(ms: number, lng: string): string {
+  const total = Math.max(0, Math.round(ms / 1000));
+  const unit = (value: number, u: "second" | "minute") =>
+    new Intl.NumberFormat(lng, { style: "unit", unit: u, unitDisplay: "short" }).format(value);
+  if (total < 60) return unit(total, "second");
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return seconds
+    ? `${unit(minutes, "minute")} ${unit(seconds, "second")}`
+    : unit(minutes, "minute");
 }

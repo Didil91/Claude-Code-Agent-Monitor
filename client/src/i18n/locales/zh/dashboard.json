@@ -40,6 +40,11 @@
     "temperature": "温度",
     "load": "负载",
     "noData": "暂无读数",
+    "markers": {
+      "sessionStart": "会话开始 · {{time}}",
+      "sessionEnd": "会话结束 · {{time}}",
+      "command": "命令完成 · {{time}} · {{duration}}"
+    },
     "details": {
       "cores": "核心数：{{n}}",
       "ram": "已用 {{used}} / {{total}}",
