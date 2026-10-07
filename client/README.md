@@ -204,6 +204,7 @@ client/
 │   │   ├── TodoProgressIndicator.tsx # Micro donut + portal tooltip beside Sessions status
 │   │   ├── TodoProgressPanel.tsx # Full owner-aware tracker on Session Detail
 │   │   ├── todoProgress.ts       # Shared task status colors/formatters
+│   │   ├── machine/        # Dashboard Machine tab: metric tabs + sparklines, 5-min d3 chart, top processes
 │   │   └── workflows/      # D3.js workflow visualization components (12 files)
 │   │
 │   ├── pages/              # Route pages
@@ -223,11 +224,14 @@ client/
 │   │   ├── eventBus.ts     # WebSocket pub/sub + connection state
 │   │   ├── dataScope.ts    # Global data-scope store (app-wide ?sources= selection)
 │   │   ├── format.ts       # Formatters (formatTime, timeAgo, fmtCost)
+│   │   ├── machine.ts      # Machine-mode metric helpers (series, levels, top processes, claude detection)
+│   │   ├── machineThresholds.ts # Machine-mode orange/red thresholds (single source)
 │   │   ├── sound.ts        # Web Audio cue synthesis + sound preferences
 │   │   └── types.ts        # TypeScript type definitions
 │   │
 │   ├── hooks/
 │   │   ├── useWebSocket.ts      # Auto-reconnecting WebSocket hook
+│   │   ├── useMachineMetrics.ts # GET /api/machine + live machine.sample window
 │   │   ├── useNotifications.ts  # Browser push notification triggers
 │   │   └── useSoundCues.ts      # Event-bus → synthesized audio cues
 │   │
@@ -255,7 +259,7 @@ graph TB
     App[App.tsx<br/>Router + WS + Notifications]
     Layout[Layout.tsx<br/>Sidebar + Outlet]
 
-    Dashboard[Dashboard<br/>Monitor tab: stats + agents + events<br/>Health tab: SystemHealthTab]
+    Dashboard[Dashboard<br/>Monitor tab: stats + agents + events<br/>Health tab: SystemHealthTab<br/>Machine tab: MachineTab]
     Kanban[KanbanBoard<br/>4-column agent board]
     Sessions[Sessions<br/>searchable multi-project table + custom sorting]
     Detail[SessionDetail<br/>agent hierarchy + timeline]
@@ -270,6 +274,7 @@ graph TB
     Dashboard --> StatCard[StatCard × 6]
     Dashboard --> AgentCard[AgentCard × N]
     Dashboard --> HealthTab["SystemHealthTab<br/>(health score, storage donut,<br/>gauges, tool bars, subagent<br/>effectiveness, model tokens)"]
+    Dashboard --> MachineTab["MachineTab<br/>(metric tabs, 5-min d3 chart,<br/>top processes)"]
     Detail --> AgentCard
     Feed --> EventDetail[EventDetail<br/>inline payload viewer]
     Detail --> EventDetail
@@ -383,6 +388,35 @@ function SessionDetailPage() {
 
 ---
 
+## Machine Tab
+
+Third Dashboard tab (`/?tab=machine`, also in the command palette under Views), implemented in
+[`src/components/machine/`](src/components/machine/) and fed by
+[`src/hooks/useMachineMetrics.ts`](src/hooks/useMachineMetrics.ts): it loads the 5-minute window from
+`GET /api/machine`, then appends every `machine.sample` message.
+
+- **Metric tabs** — CPU, RAM, disk activity, GPU (only once a GPU reading exists) and Processes, each with
+  its live value and a sparkline; the selected tab uses the accent colour. The Processes value is the summed
+  CPU share of the `claude` processes; the server keeps no process history, so that curve starts when the
+  tab opens.
+- **Big chart** — the selected metric over the last 5 minutes (d3 scales and shapes rendered as React SVG):
+  accent-gradient area, % axis, minute ticks, dashed GPU temperature on its own °C axis.
+- **Top processes** — the 8 heaviest, sorted by CPU or RAM from the column headers; `claude` rows carry a badge.
+- **Thresholds** — [`src/lib/machineThresholds.ts`](src/lib/machineThresholds.ts) is the single source
+  (CPU 70/90 %, RAM 80/92 %, disk 80/95 %, GPU 75/85 °C, orange/red). Values take `text-orange-300` /
+  `text-red-400`, which the light-theme Tailwind plugin darkens, so they stay readable on both themes. The
+  GPU is judged on its temperature.
+- **Sensor status** — a banner explains `starting`, `unavailable` (with the retry delay), `unsupported`
+  and `disabled` sensor states, a GPU restart, or a failed load.
+
+Validate with:
+
+```bash
+cd client && npx vitest run src/components/machine src/lib/__tests__/machine.test.ts src/hooks/__tests__/useMachineMetrics.test.tsx
+```
+
+---
+
 ## WebSocket Integration
 
 ### Reload Throttling
@@ -454,7 +488,7 @@ Server broadcasts these event types over WebSocket:
 | `notification.received` | Notification object | Notification hook |
 | `remote_source.status` | `{ id, status, error?, providers?, last_sync_at? }` (`status`: `idle`/`syncing`/`ok`/`error`/`deleted`; each provider can also be `unavailable`) | Remote Data Source sync poller + `/api/remote-sources` routes |
 | `remote_data.updated` | `{ sourceId, source, label?, counters?, providers?, last_sync_at? }` | Emitted once per successful remote sync; provider-aware counters trigger stats/cost/session refetches. The server also broadcasts `session_created` / `session_updated` (and main-agent frames) for each mirrored session so Kanban/Sessions update immediately |
-| `machine.sample` | `{ sample, processes, status }` (host PC metrics, see `docs/API.md` → Machine) | Every 2 s from the machine-metrics sensor. Telemetry, not activity: the Sidebar activity counter and the Workflows auto-refresh ignore it |
+| `machine.sample` | `{ sample, processes, status }` (host PC metrics, see `docs/API.md` → Machine) | Every 2 s from the machine-metrics sensor. Consumed by the Dashboard Machine tab (`useMachineMetrics`, only while the tab is open). Telemetry, not activity: the Sidebar activity counter and the Workflows auto-refresh ignore it |
 
 ### EventBus Pattern
 

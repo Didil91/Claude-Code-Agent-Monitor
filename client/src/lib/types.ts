@@ -1763,7 +1763,7 @@ export interface WSMessage {
    *  alert_triggered/alert_updated → AlertEvent; workflow_upserted → WorkflowRun;
    *  remote_source.status → RemoteSourceStatusPayload;
    *  remote_data.updated → RemoteDataUpdatedPayload;
-   *  machine.sample → host PC metrics sample, sent every 2 s (see docs/API.md). */
+   *  machine.sample → MachineSamplePayload, sent every 2 s (see docs/API.md). */
   type:
     | "session_created"
     | "session_updated"
@@ -1797,10 +1797,78 @@ export interface WSMessage {
     | AlertEvent
     | WorkflowRun
     | RemoteSourceStatusPayload
-    | RemoteDataUpdatedPayload;
+    | RemoteDataUpdatedPayload
+    | MachineSamplePayload;
   /** ISO timestamp the server broadcast this message (not necessarily the
    *  same instant the underlying event occurred). */
   timestamp: string;
+}
+
+// ───── Machine (host PC metrics) ─────
+
+/** One host PC reading from `server/lib/machine-metrics.js`. Any block is
+ *  `null` while its source is unavailable (e.g. `disk`/`gpu` off Windows). */
+export interface MachineSample {
+  /** Epoch milliseconds of the reading. */
+  ts: number;
+  cpu: { percent: number; source: "cim" | "os" } | null;
+  ram: { usedBytes: number; totalBytes: number; percent: number } | null;
+  disk: { activePercent: number; readBytesPerSec: number; writeBytesPerSec: number } | null;
+  volume: { path: string; usedBytes: number; totalBytes: number; percent: number } | null;
+  gpu: {
+    index: number;
+    utilPercent: number | null;
+    memUsedMiB: number | null;
+    memTotalMiB: number | null;
+    memPercent: number | null;
+    temperatureC: number | null;
+    lowPower: boolean;
+  } | null;
+}
+
+/** One entry of the top-process snapshot. `cpuPercent` is a share of the
+ *  whole machine; `memoryBytes` is the private working set. */
+export interface MachineProcess {
+  name: string;
+  pid: number;
+  parentPid: number | null;
+  cpuPercent: number;
+  memoryBytes: number;
+}
+
+/** Latest top-process snapshot (refreshed every 5 s on Windows). */
+export interface MachineProcesses {
+  ts: number;
+  cores: number;
+  items: MachineProcess[];
+}
+
+/** Sensor health as reported by the server. */
+export interface MachineStatus {
+  sensor: "starting" | "ok" | "unavailable" | "unsupported" | "disabled";
+  gpu: "starting" | "ok" | "unavailable" | "absent" | "disabled";
+  sensorError: string | null;
+  retryInMs: number | null;
+}
+
+/** Response shape of GET /api/machine — a rolling 5-minute window. */
+export interface MachineSnapshot {
+  platform: string;
+  cores: number;
+  intervalMs: number;
+  processIntervalMs: number;
+  windowMs: number;
+  status: MachineStatus;
+  /** Oldest first. */
+  samples: MachineSample[];
+  processes: MachineProcesses | null;
+}
+
+/** `data` of the `machine.sample` WebSocket message. */
+export interface MachineSamplePayload {
+  sample: MachineSample;
+  processes: MachineProcesses | null;
+  status: MachineStatus;
 }
 
 // ───── Session stats ─────

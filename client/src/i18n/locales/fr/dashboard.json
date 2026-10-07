@@ -21,6 +21,52 @@
   "totalTrend": " dans les sessions actives",
   "tabs": {
     "monitor": "Surveillance",
-    "health": "État de santé"
+    "health": "État de santé",
+    "machine": "Machine"
+  },
+  "machine": {
+    "metrics": {
+      "cpu": "CPU",
+      "ram": "RAM",
+      "disk": "Disque",
+      "gpu": "GPU",
+      "processes": "Processus"
+    },
+    "metricsLabel": "Métriques de la machine",
+    "claudeCpuCaption": "CPU de claude",
+    "chartTitle": "{{metric}} — 5 dernières minutes",
+    "chartTitleProcesses": "CPU des processus claude — 5 dernières minutes",
+    "chartLabel": "{{metric}} sur les 5 dernières minutes",
+    "temperature": "Température",
+    "load": "Charge",
+    "noData": "Aucune mesure pour l’instant",
+    "details": {
+      "cores": "Cœurs : {{n}}",
+      "ram": "{{used}} utilisés sur {{total}}",
+      "diskIo": "Lecture {{read}}/s · Écriture {{write}}/s",
+      "volume": "Volume {{path}} : {{percent}} occupé",
+      "gpuMem": "Mémoire {{used}} / {{total}}",
+      "gpuLowPower": "GPU en veille",
+      "claudeCount": "Processus claude : {{n}}"
+    },
+    "processes": {
+      "title": "Processus les plus gourmands",
+      "name": "Nom",
+      "pid": "PID",
+      "cpu": "CPU",
+      "ram": "RAM",
+      "sortBy": "Trier par {{column}}",
+      "claudeBadge": "claude",
+      "empty": "Aucune donnée de processus du capteur"
+    },
+    "status": {
+      "starting": "Démarrage du capteur de métriques…",
+      "unavailable": "Capteur indisponible — nouvelle tentative dans {{seconds}} s. CPU et RAM viennent d’une source de secours ; disque et processus sont en pause.",
+      "unavailableNoRetry": "Capteur indisponible. CPU et RAM viennent d’une source de secours ; disque et processus sont en pause.",
+      "unsupported": "Mesures limitées sur ce système : CPU, RAM et volume système uniquement.",
+      "disabled": "Le capteur de métriques ne tourne pas sur ce serveur.",
+      "error": "Impossible de charger les métriques de la machine.",
+      "gpuUnavailable": "Capteur GPU indisponible — redémarrage en cours."
+    }
   }
 }

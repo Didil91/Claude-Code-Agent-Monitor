@@ -392,6 +392,7 @@ import type {
   CursorModelPricing,
   DashboardEvent,
   GptModelPricing,
+  MachineSnapshot,
   ModelPricing,
   Session,
   SessionDrillIn,
@@ -1244,6 +1245,13 @@ export const api = {
         `/workflows/runs/${encodeURIComponent(runId)}${qs.size ? `?${qs.toString()}` : ""}`
       );
     },
+  },
+
+  // ─────────────────────────────── Machine API ────────────────────────────────
+  /** Host PC metrics for the Machine mode. Maps to `server/routes/machine.js`. */
+  machine: {
+    /** GET /api/machine - last 5 minutes of samples, latest processes, sensor status. */
+    get: () => request<MachineSnapshot>("/machine"),
   },
 
   // ─────────────────────────────── Pricing API ────────────────────────────────
