@@ -68,5 +68,33 @@
       "error": "Impossible de charger les métriques de la machine.",
       "gpuUnavailable": "Capteur GPU indisponible — redémarrage en cours."
     }
+  },
+  "braise": {
+    "name": "Braise",
+    "open": "Ouvrir Braise, le compagnon machine",
+    "close": "Fermer Braise",
+    "hint": "Braise · glisser pour déplacer",
+    "state": {
+      "idle": "Somnole — la machine est au calme",
+      "normal": "Tout est calme",
+      "warn": "Sous charge",
+      "crit": "En surchauffe"
+    },
+    "alert": {
+      "cpu": "Le CPU est à {{value}}",
+      "ram": "La RAM est à {{value}}",
+      "disk": "Le disque est à {{value}}",
+      "gpuTemp": "Le GPU est à {{value}}"
+    },
+    "dismiss": "Masquer",
+    "panel": {
+      "title": "Résumé de la machine",
+      "activeAgents": "Agents actifs",
+      "topProcess": "Processus le plus gourmand",
+      "noProcess": "Aucune donnée de processus",
+      "noData": "Aucune mesure pour l’instant",
+      "openMachine": "Ouvrir le mode Machine",
+      "close": "Fermer"
+    }
   }
 }

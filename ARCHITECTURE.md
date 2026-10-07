@@ -85,7 +85,7 @@ Architectural overview and technical reference for the Agent Dashboard system, c
 - [State Management](#state-management)
 - [Browser Notification System](#browser-notification-system)
 - [Update Notifier Subsystem](#update-notifier-subsystem)
-- [Tabby Companion Subsystem](#tabby-companion-subsystem)
+- [Tabby Companion Subsystem](#tabby-companion-subsystem) (with Braise, the machine flame)
 - [VS Code Extension Architecture](#vs-code-extension-architecture)
 - [Desktop App Architecture (macOS & Windows / Electron)](#desktop-app-architecture-macos--windows--electron)
 - [Security Considerations](#security-considerations)
@@ -641,6 +641,7 @@ graph TD
         STB[StatusBadge]
         ES[EmptyState]
         TB["Tabby/<br/>(floating cat companion)"]
+        BR["Braise/<br/>(machine flame companion)"]
     end
 
     D --> STC & AGC & STB
@@ -650,8 +651,8 @@ graph TD
     AF --> STB & ES
     APP --> L
     L --> SB
-    L --> TB
-    EB --> TB
+    L --> TB & BR
+    EB --> TB & BR
 
     style TYPES fill:#3178C6,stroke:#5a9fd4,color:#fff
     style EB fill:#f59e0b,stroke:#fbbf24,color:#000
@@ -2321,6 +2322,18 @@ Tabby's only contact with the rest of the app is four light, additive touchpoint
 | `client/src/pages/Settings.tsx` | On/off toggle wired to `tabbyPrefs` (`localStorage`). |
 | `client/src/pages/Run.tsx` | Reads `?prompt=` to prefill the prompt box for Tabby's Ask handoff. |
 | `client/src/i18n/locales/{en,zh,vi,ko,es}/settings.json` | `tabby.*` strings for the Settings toggle (en / zh / vi / ko / es). |
+
+### Braise, the machine flame
+
+Braise (`client/src/components/Braise/`) is a second floating companion, mounted next to Tabby in `Layout.tsx`. It mirrors the host PC load instead of the session stream: it reads `useMachineMetrics` (`GET /api/machine`, then every `machine.sample`), so like Tabby it adds no server code, route, message type or table.
+
+| File | Role |
+| --- | --- |
+| `braiseState.ts` | Pure: worst threshold level across CPU, RAM, disk activity and GPU °C (`lib/machineThresholds.ts`) → `warn` / `crit`; under every threshold `idle` when CPU < 10 %, else `normal`. Also the red reading named by the alert bubble (furthest past its bound) and the heaviest process. |
+| `BraiseFlame.tsx` + `braise.css` | One SVG; `data-state` drives size, palette (CSS variables with light-theme shades) and flicker speed — dozing blue ember, calm orange, larger fast flame, big red flame with sparks. Animations off under `prefers-reduced-motion`. |
+| `BraisePanel.tsx` | Click card: the four metrics coloured by level (GPU only when one reports), active agents (`GET /api/stats` → `active_agents`, fetched while the card is open and refreshed on agent/session messages), heaviest process, "Open Machine mode" (`/?tab=machine`). |
+| `Braise.tsx` | Shell. Reuses Tabby's `useTabbyPosition` (now taking `size`, `getPos`, `setPos`, `defaultPos`) and `TabbyFlyout`. Red-zone alert bubble, dismissible until the readings leave the red zone. Mounts nothing — and fetches nothing — while hidden. |
+| `prefs.ts` | `agent-dashboard-braise-enabled` / `agent-dashboard-braise-pos`. First dock: Tabby's edge, at the far end from the cat, so the two never overlap on first display. Toggle in **Settings → Braise**. |
 
 ---
 

@@ -20,6 +20,12 @@
     "enable": "Afficher Tabby",
     "enableDesc": "Affiche le compagnon dans le coin de tout le tableau de bord (⌘B pour l'ouvrir)"
   },
+  "braise": {
+    "title": "Compagnon Braise",
+    "description": "Une petite flamme qui reflète la charge de votre PC (CPU, RAM, disque, GPU).",
+    "enable": "Afficher Braise",
+    "enableDesc": "Affiche la flamme machine sur tout le tableau de bord ; un clic ouvre un résumé"
+  },
   "sound": {
     "title": "Son",
     "description": "De courts carillons discrets pour l'activité des sessions en direct. Générés dans le navigateur - aucun téléchargement, aucun suivi.",

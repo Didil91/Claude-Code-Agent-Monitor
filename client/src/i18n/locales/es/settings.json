@@ -20,6 +20,12 @@
     "enable": "Mostrar Tabby",
     "enableDesc": "Mostrar el compañero de esquina en todo el panel (⌘B para abrir)"
   },
+  "braise": {
+    "title": "Compañero Braise",
+    "description": "Una pequeña llama que refleja la carga de tu PC (CPU, RAM, disco, GPU).",
+    "enable": "Mostrar Braise",
+    "enableDesc": "Muestra la llama de la máquina en todo el panel; haz clic para ver un resumen"
+  },
   "sound": {
     "title": "Sonido",
     "description": "Tonos breves y discretos para la actividad de sesiones en vivo. Se generan en el navegador: sin descargas ni seguimiento.",

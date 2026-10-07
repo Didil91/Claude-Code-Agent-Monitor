@@ -20,6 +20,12 @@
     "enable": "Hiện Tabby",
     "enableDesc": "Hiển thị bạn đồng hành ở góc trên toàn bảng điều khiển (⌘B để mở)"
   },
+  "braise": {
+    "title": "Bạn đồng hành Braise",
+    "description": "Một ngọn lửa nhỏ phản ánh tải của PC (CPU, RAM, ổ đĩa, GPU).",
+    "enable": "Hiện Braise",
+    "enableDesc": "Hiển thị ngọn lửa của máy trên toàn bảng điều khiển; nhấp để xem tóm tắt"
+  },
   "sound": {
     "title": "Âm thanh",
     "description": "Tiếng chuông ngắn, nhẹ cho hoạt động phiên trực tiếp. Được tạo ngay trong trình duyệt - không tải xuống, không theo dõi.",

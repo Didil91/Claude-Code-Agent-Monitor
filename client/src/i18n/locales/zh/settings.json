@@ -20,6 +20,12 @@
     "enable": "显示 Tabby",
     "enableDesc": "在整个仪表板的角落显示伙伴（按 ⌘B 打开）"
   },
+  "braise": {
+    "title": "Braise 伙伴",
+    "description": "一团小火苗，反映电脑的负载（CPU、内存、磁盘、GPU）。",
+    "enable": "显示 Braise",
+    "enableDesc": "在整个仪表板上显示机器火苗；点击查看概览"
+  },
   "sound": {
     "title": "声音",
     "description": "为实时会话活动播放简短、轻柔的提示音。完全在浏览器中合成——无需下载，不做追踪。",
