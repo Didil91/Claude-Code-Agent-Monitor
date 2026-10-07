@@ -102,6 +102,7 @@ import { isRemoteDataRefreshMessage } from "../lib/remoteDataEvents";
 import { mergeFreshestById } from "../lib/merge-by-id";
 import { useDataScope } from "../lib/dataScope";
 import { StatCard } from "../components/StatCard";
+import { MachineTab } from "../components/machine/MachineTab";
 import { AgentCard } from "../components/AgentCard";
 import { AgentStatusBadge } from "../components/StatusBadge";
 import { EmptyState } from "../components/EmptyState";
@@ -112,8 +113,8 @@ import { timeAgo, fmt, fmtCost, formatModelName } from "../lib/format";
 import { activityStatusFromEvent } from "../lib/event-grouping";
 import type { Stats, Agent, DashboardEvent, WSMessage, WorkflowData, Session } from "../lib/types";
 
-/** Tab keys in render order — also the order `1`/`2` and `[`/`]` address them. */
-const DASHBOARD_TABS = ["monitor", "health"] as const;
+/** Tab keys in render order — also the order `1`–`3` and `[`/`]` address them. */
+const DASHBOARD_TABS = ["monitor", "health", "machine"] as const;
 
 interface SystemInfo {
   db: {
@@ -1259,6 +1260,16 @@ export function Dashboard() {
             >
               <Server className="w-3.5 h-3.5" /> {t("tabs.health")}
             </button>
+            <button
+              onClick={() => setActiveTab("machine")}
+              className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-2 ${
+                activeTab === "machine"
+                  ? "bg-accent/15 text-accent shadow-sm"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5" /> {t("tabs.machine")}
+            </button>
           </div>
           <button onClick={load} className="btn-ghost flex-shrink-0">
             <RefreshCw className="w-4 h-4" /> {t("common:refresh")}
@@ -1551,8 +1562,10 @@ export function Dashboard() {
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeTab === "health" ? (
         <SystemHealthTab />
+      ) : (
+        <MachineTab />
       )}
     </div>
   );

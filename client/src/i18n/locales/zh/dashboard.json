@@ -21,6 +21,52 @@
   "totalTrend": "（活跃会话中）",
   "tabs": {
     "monitor": "监控",
-    "health": "健康状态"
+    "health": "健康状态",
+    "machine": "本机"
+  },
+  "machine": {
+    "metrics": {
+      "cpu": "CPU",
+      "ram": "内存",
+      "disk": "磁盘",
+      "gpu": "GPU",
+      "processes": "进程"
+    },
+    "metricsLabel": "本机指标",
+    "claudeCpuCaption": "claude CPU",
+    "chartTitle": "{{metric}} — 最近 5 分钟",
+    "chartTitleProcesses": "claude 进程的 CPU — 最近 5 分钟",
+    "chartLabel": "最近 5 分钟的{{metric}}",
+    "temperature": "温度",
+    "load": "负载",
+    "noData": "暂无读数",
+    "details": {
+      "cores": "核心数：{{n}}",
+      "ram": "已用 {{used}} / {{total}}",
+      "diskIo": "读取 {{read}}/s · 写入 {{write}}/s",
+      "volume": "卷 {{path}}：已用 {{percent}}",
+      "gpuMem": "显存 {{used}} / {{total}}",
+      "gpuLowPower": "GPU 已休眠",
+      "claudeCount": "claude 进程：{{n}}"
+    },
+    "processes": {
+      "title": "资源占用最高的进程",
+      "name": "名称",
+      "pid": "PID",
+      "cpu": "CPU",
+      "ram": "内存",
+      "sortBy": "按{{column}}排序",
+      "claudeBadge": "claude",
+      "empty": "传感器暂无进程数据"
+    },
+    "status": {
+      "starting": "正在启动指标传感器…",
+      "unavailable": "传感器不可用 — {{seconds}} 秒后重试。CPU 和内存使用备用来源；磁盘和进程已暂停。",
+      "unavailableNoRetry": "传感器不可用。CPU 和内存使用备用来源；磁盘和进程已暂停。",
+      "unsupported": "此系统仅提供有限读数：CPU、内存和系统卷。",
+      "disabled": "此服务器上未运行指标传感器。",
+      "error": "无法加载本机指标。",
+      "gpuUnavailable": "GPU 传感器不可用 — 正在重启。"
+    }
   }
 }

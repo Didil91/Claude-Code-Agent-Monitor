@@ -151,6 +151,7 @@ import {
   Moon,
   Sun,
   Heart,
+  Cpu,
   History,
   Keyboard,
   Layers,
@@ -450,6 +451,13 @@ const VIEW_COMMANDS: {
     labelKey: "dashboard:tabs.health",
     ownerKey: "nav:dashboard",
     icon: Heart,
+  },
+  {
+    id: "view:dashboard:machine",
+    to: "/?tab=machine",
+    labelKey: "dashboard:tabs.machine",
+    ownerKey: "nav:dashboard",
+    icon: Cpu,
   },
   {
     id: "view:kanban:agents",

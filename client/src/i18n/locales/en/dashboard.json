@@ -21,6 +21,52 @@
   "totalTrend": " in active sessions",
   "tabs": {
     "monitor": "Monitor",
-    "health": "Health"
+    "health": "Health",
+    "machine": "Machine"
+  },
+  "machine": {
+    "metrics": {
+      "cpu": "CPU",
+      "ram": "RAM",
+      "disk": "Disk",
+      "gpu": "GPU",
+      "processes": "Processes"
+    },
+    "metricsLabel": "Machine metrics",
+    "claudeCpuCaption": "claude CPU",
+    "chartTitle": "{{metric}} — last 5 minutes",
+    "chartTitleProcesses": "CPU used by claude processes — last 5 minutes",
+    "chartLabel": "{{metric}} over the last 5 minutes",
+    "temperature": "Temperature",
+    "load": "Load",
+    "noData": "No readings yet",
+    "details": {
+      "cores": "Cores: {{n}}",
+      "ram": "{{used}} of {{total}} in use",
+      "diskIo": "Read {{read}}/s · Write {{write}}/s",
+      "volume": "Volume {{path}}: {{percent}} full",
+      "gpuMem": "Memory {{used}} / {{total}}",
+      "gpuLowPower": "GPU powered down",
+      "claudeCount": "claude processes: {{n}}"
+    },
+    "processes": {
+      "title": "Top processes",
+      "name": "Name",
+      "pid": "PID",
+      "cpu": "CPU",
+      "ram": "RAM",
+      "sortBy": "Sort by {{column}}",
+      "claudeBadge": "claude",
+      "empty": "No process data from the sensor"
+    },
+    "status": {
+      "starting": "Starting the metrics sensor…",
+      "unavailable": "Sensor unavailable — retrying in {{seconds}} s. CPU and RAM come from a fallback; disk and processes are paused.",
+      "unavailableNoRetry": "Sensor unavailable. CPU and RAM come from a fallback; disk and processes are paused.",
+      "unsupported": "Limited readings on this system: CPU, RAM and system volume only.",
+      "disabled": "The metrics sensor is not running on this server.",
+      "error": "Could not load the machine metrics.",
+      "gpuUnavailable": "GPU sensor unavailable — restarting."
+    }
   }
 }

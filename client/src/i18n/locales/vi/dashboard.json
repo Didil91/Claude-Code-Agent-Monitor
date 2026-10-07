@@ -21,6 +21,52 @@
   "totalTrend": " trong phiên hoạt động",
   "tabs": {
     "monitor": "Giám sát",
-    "health": "Tình trạng"
+    "health": "Tình trạng",
+    "machine": "Máy"
+  },
+  "machine": {
+    "metrics": {
+      "cpu": "CPU",
+      "ram": "RAM",
+      "disk": "Ổ đĩa",
+      "gpu": "GPU",
+      "processes": "Tiến trình"
+    },
+    "metricsLabel": "Chỉ số máy",
+    "claudeCpuCaption": "CPU của claude",
+    "chartTitle": "{{metric}} — 5 phút gần nhất",
+    "chartTitleProcesses": "CPU của các tiến trình claude — 5 phút gần nhất",
+    "chartLabel": "{{metric}} trong 5 phút gần nhất",
+    "temperature": "Nhiệt độ",
+    "load": "Tải",
+    "noData": "Chưa có số đo",
+    "details": {
+      "cores": "Số nhân: {{n}}",
+      "ram": "Đang dùng {{used}} / {{total}}",
+      "diskIo": "Đọc {{read}}/s · Ghi {{write}}/s",
+      "volume": "Ổ {{path}}: đã dùng {{percent}}",
+      "gpuMem": "Bộ nhớ {{used}} / {{total}}",
+      "gpuLowPower": "GPU đang tắt nguồn",
+      "claudeCount": "Tiến trình claude: {{n}}"
+    },
+    "processes": {
+      "title": "Tiến trình tốn tài nguyên nhất",
+      "name": "Tên",
+      "pid": "PID",
+      "cpu": "CPU",
+      "ram": "RAM",
+      "sortBy": "Sắp xếp theo {{column}}",
+      "claudeBadge": "claude",
+      "empty": "Cảm biến chưa gửi dữ liệu tiến trình"
+    },
+    "status": {
+      "starting": "Đang khởi động cảm biến…",
+      "unavailable": "Cảm biến không khả dụng — thử lại sau {{seconds}} s. CPU và RAM lấy từ nguồn dự phòng; ổ đĩa và tiến trình tạm dừng.",
+      "unavailableNoRetry": "Cảm biến không khả dụng. CPU và RAM lấy từ nguồn dự phòng; ổ đĩa và tiến trình tạm dừng.",
+      "unsupported": "Số đo hạn chế trên hệ thống này: chỉ CPU, RAM và ổ hệ thống.",
+      "disabled": "Cảm biến chỉ số không chạy trên máy chủ này.",
+      "error": "Không tải được chỉ số máy.",
+      "gpuUnavailable": "Cảm biến GPU không khả dụng — đang khởi động lại."
+    }
   }
 }

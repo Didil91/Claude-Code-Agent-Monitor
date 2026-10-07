@@ -507,6 +507,7 @@ graph TD
     DASH --> AC1["AgentCard[]<br/>with collapsible subagent hierarchy"]
     DASH --> EV1["Event rows"]
     DASH --> HEALTH["SystemHealthTab<br/>(health score ring, storage donut,<br/>cache/error/success gauges,<br/>tool bars, subagent effectiveness,<br/>model tokens, compaction stats)"]
+    DASH --> MACHINE["MachineTab (?tab=machine)<br/>(CPU/RAM/disk/GPU/processes tabs<br/>with sparklines, 5-min d3 chart,<br/>top 8 processes, sensor status)"]
 
     KANBAN --> COL["Agents view: 4 columns<br/>(working/waiting/<br/>completed/error)<br/>Sessions view: 5 columns<br/>(active/waiting/completed/<br/>error/abandoned)"]
     COL --> AC2["AgentCard[]"]

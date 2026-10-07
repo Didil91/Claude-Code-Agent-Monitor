@@ -21,6 +21,52 @@
   "totalTrend": " en sesiones activas",
   "tabs": {
     "monitor": "Monitor",
-    "health": "Estado"
+    "health": "Estado",
+    "machine": "Máquina"
+  },
+  "machine": {
+    "metrics": {
+      "cpu": "CPU",
+      "ram": "RAM",
+      "disk": "Disco",
+      "gpu": "GPU",
+      "processes": "Procesos"
+    },
+    "metricsLabel": "Métricas de la máquina",
+    "claudeCpuCaption": "CPU de claude",
+    "chartTitle": "{{metric}} — últimos 5 minutos",
+    "chartTitleProcesses": "CPU de los procesos claude — últimos 5 minutos",
+    "chartLabel": "{{metric}} en los últimos 5 minutos",
+    "temperature": "Temperatura",
+    "load": "Carga",
+    "noData": "Aún no hay lecturas",
+    "details": {
+      "cores": "Núcleos: {{n}}",
+      "ram": "{{used}} de {{total}} en uso",
+      "diskIo": "Lectura {{read}}/s · Escritura {{write}}/s",
+      "volume": "Volumen {{path}}: {{percent}} ocupado",
+      "gpuMem": "Memoria {{used}} / {{total}}",
+      "gpuLowPower": "GPU en reposo",
+      "claudeCount": "Procesos claude: {{n}}"
+    },
+    "processes": {
+      "title": "Procesos que más consumen",
+      "name": "Nombre",
+      "pid": "PID",
+      "cpu": "CPU",
+      "ram": "RAM",
+      "sortBy": "Ordenar por {{column}}",
+      "claudeBadge": "claude",
+      "empty": "El sensor no ha enviado datos de procesos"
+    },
+    "status": {
+      "starting": "Iniciando el sensor de métricas…",
+      "unavailable": "Sensor no disponible — reintento en {{seconds}} s. CPU y RAM vienen de una fuente de respaldo; disco y procesos están en pausa.",
+      "unavailableNoRetry": "Sensor no disponible. CPU y RAM vienen de una fuente de respaldo; disco y procesos están en pausa.",
+      "unsupported": "Lecturas limitadas en este sistema: solo CPU, RAM y volumen del sistema.",
+      "disabled": "El sensor de métricas no se está ejecutando en este servidor.",
+      "error": "No se pudieron cargar las métricas de la máquina.",
+      "gpuUnavailable": "Sensor de GPU no disponible — reiniciando."
+    }
   }
 }
