@@ -73,5 +73,33 @@
       "error": "No se pudieron cargar las métricas de la máquina.",
       "gpuUnavailable": "Sensor de GPU no disponible — reiniciando."
     }
+  },
+  "braise": {
+    "name": "Braise",
+    "open": "Abrir Braise, el compañero de la máquina",
+    "close": "Cerrar Braise",
+    "hint": "Braise · arrastra para mover",
+    "state": {
+      "idle": "Dormitando: la máquina está tranquila",
+      "normal": "Todo en calma",
+      "warn": "Bajo carga",
+      "crit": "Sobrecargada"
+    },
+    "alert": {
+      "cpu": "La CPU está al {{value}}",
+      "ram": "La RAM está al {{value}}",
+      "disk": "El disco está al {{value}}",
+      "gpuTemp": "La GPU está a {{value}}"
+    },
+    "dismiss": "Descartar",
+    "panel": {
+      "title": "Resumen de la máquina",
+      "activeAgents": "Agentes activos",
+      "topProcess": "Proceso que más consume",
+      "noProcess": "Sin datos de procesos",
+      "noData": "Aún no hay mediciones",
+      "openMachine": "Abrir el modo Máquina",
+      "close": "Cerrar"
+    }
   }
 }

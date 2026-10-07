@@ -73,5 +73,33 @@
       "error": "Không tải được chỉ số máy.",
       "gpuUnavailable": "Cảm biến GPU không khả dụng — đang khởi động lại."
     }
+  },
+  "braise": {
+    "name": "Braise",
+    "open": "Mở Braise, bạn đồng hành của máy",
+    "close": "Đóng Braise",
+    "hint": "Braise · kéo để di chuyển",
+    "state": {
+      "idle": "Đang ngủ gật — máy đang rảnh",
+      "normal": "Mọi thứ êm ả",
+      "warn": "Đang chịu tải",
+      "crit": "Quá tải"
+    },
+    "alert": {
+      "cpu": "CPU đang ở mức {{value}}",
+      "ram": "RAM đang ở mức {{value}}",
+      "disk": "Ổ đĩa đang ở mức {{value}}",
+      "gpuTemp": "GPU đang ở {{value}}"
+    },
+    "dismiss": "Bỏ qua",
+    "panel": {
+      "title": "Tóm tắt máy",
+      "activeAgents": "Agent đang hoạt động",
+      "topProcess": "Tiến trình nặng nhất",
+      "noProcess": "Không có dữ liệu tiến trình",
+      "noData": "Chưa có số đo",
+      "openMachine": "Mở chế độ Máy",
+      "close": "Đóng"
+    }
   }
 }

@@ -205,6 +205,7 @@ client/
 │   │   ├── TodoProgressPanel.tsx # Full owner-aware tracker on Session Detail
 │   │   ├── todoProgress.ts       # Shared task status colors/formatters
 │   │   ├── machine/        # Dashboard Machine tab: metric tabs + sparklines, 5-min d3 chart, top processes
+│   │   ├── Braise/         # Braise, the floating machine flame (state from thresholds, summary card)
 │   │   └── workflows/      # D3.js workflow visualization components (12 files)
 │   │
 │   ├── pages/              # Route pages
@@ -427,6 +428,30 @@ cd client && npx vitest run src/components/machine src/lib/__tests__/machine.tes
 
 ---
 
+## Braise (machine flame)
+
+A floating flame in [`src/components/Braise/`](src/components/Braise/), mounted next to Tabby on every page and fed by
+the same `useMachineMetrics` hook as the Machine tab.
+
+- **Looks** — worst level across CPU, RAM, disk activity and GPU temperature, from `src/lib/machineThresholds.ts`:
+  dozing blue ember (CPU < 10 % and nothing over a threshold), calm orange flame, larger fast-flickering flame
+  (orange threshold), big red flame with sparks plus an alert bubble such as "The disk is at 97%" (red threshold;
+  click the bubble to dismiss it until the readings leave the red zone). CSS-animated SVG, palette in CSS variables
+  with darker light-theme shades, animations off under `prefers-reduced-motion`.
+- **Card** — click for CPU, RAM, disk, GPU (load · °C, only when a GPU reports), active agents (`GET /api/stats`),
+  the heaviest process, and "Open Machine mode" (`/?tab=machine`). Esc closes it.
+- **Position** — drag to move; it docks to the nearest edge like Tabby (shared `useTabbyPosition`) and comes back
+  there after a reload. On first display it sits on Tabby's edge at the far end from the cat.
+- **Visibility** — **Settings → Braise**. While hidden it renders nothing and fetches nothing.
+
+Validate with:
+
+```bash
+cd client && npx vitest run src/components/Braise src/components/Tabby
+```
+
+---
+
 ## WebSocket Integration
 
 ### Reload Throttling
@@ -498,7 +523,7 @@ Server broadcasts these event types over WebSocket:
 | `notification.received` | Notification object | Notification hook |
 | `remote_source.status` | `{ id, status, error?, providers?, last_sync_at? }` (`status`: `idle`/`syncing`/`ok`/`error`/`deleted`; each provider can also be `unavailable`) | Remote Data Source sync poller + `/api/remote-sources` routes |
 | `remote_data.updated` | `{ sourceId, source, label?, counters?, providers?, last_sync_at? }` | Emitted once per successful remote sync; provider-aware counters trigger stats/cost/session refetches. The server also broadcasts `session_created` / `session_updated` (and main-agent frames) for each mirrored session so Kanban/Sessions update immediately |
-| `machine.sample` | `{ sample, processes, status }` (host PC metrics, see `docs/API.md` → Machine) | Every 2 s from the machine-metrics sensor. Consumed by the Dashboard Machine tab (`useMachineMetrics`, only while the tab is open). Telemetry, not activity: the Sidebar activity counter and the Workflows auto-refresh ignore it |
+| `machine.sample` | `{ sample, processes, status }` (host PC metrics, see `docs/API.md` → Machine) | Every 2 s from the machine-metrics sensor. Consumed through `useMachineMetrics` by the Dashboard Machine tab (while open) and by Braise, the machine flame (on every page unless hidden in Settings). Telemetry, not activity: the Sidebar activity counter and the Workflows auto-refresh ignore it |
 
 ### EventBus Pattern
 
@@ -980,6 +1005,8 @@ no central store — each feature owns its own key — so this is the inventory:
 | `agent-dashboard-tabby-enabled` | local | `components/Tabby/prefs.ts` | Whether the Tabby companion is shown |
 | `agent-dashboard-tabby-muted` | local | `components/Tabby/prefs.ts` | Whether Tabby's speech bubbles are muted |
 | `agent-dashboard-tabby-pos` | local | `components/Tabby/prefs.ts` | Tabby's docked edge and vertical offset, as a viewport fraction |
+| `agent-dashboard-braise-enabled` | local | `components/Braise/prefs.ts` | Whether Braise, the machine flame, is shown |
+| `agent-dashboard-braise-pos` | local | `components/Braise/prefs.ts` | Braise's docked edge and vertical offset, as a viewport fraction |
 | `ccam-data-scope` | local | `lib/dataScope.ts` | App-wide data scope — selected remote sources and providers |
 | `sidebar-collapsed` | local | `components/Sidebar.tsx` | Sidebar collapsed state |
 | `sidebar-connection-stats` | local | `components/Sidebar.tsx` | Cumulative WebSocket stats for the connection modal |

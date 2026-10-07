@@ -73,5 +73,33 @@
       "error": "无法加载本机指标。",
       "gpuUnavailable": "GPU 传感器不可用 — 正在重启。"
     }
+  },
+  "braise": {
+    "name": "Braise",
+    "open": "打开机器伙伴 Braise",
+    "close": "关闭 Braise",
+    "hint": "Braise · 拖动以移动",
+    "state": {
+      "idle": "打盹中——机器很空闲",
+      "normal": "一切平稳",
+      "warn": "负载较高",
+      "crit": "过载"
+    },
+    "alert": {
+      "cpu": "CPU 已达 {{value}}",
+      "ram": "内存已达 {{value}}",
+      "disk": "磁盘已达 {{value}}",
+      "gpuTemp": "GPU 已达 {{value}}"
+    },
+    "dismiss": "关闭",
+    "panel": {
+      "title": "机器概览",
+      "activeAgents": "活跃代理",
+      "topProcess": "占用最高的进程",
+      "noProcess": "暂无进程数据",
+      "noData": "暂无读数",
+      "openMachine": "打开机器模式",
+      "close": "关闭"
+    }
   }
 }

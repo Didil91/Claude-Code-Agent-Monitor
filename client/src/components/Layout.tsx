@@ -2,7 +2,7 @@
  * @file Layout.tsx
  * @description Application shell that frames every authenticated route: persistent
  * sidebar, main content column, update notifier, the Cmd/Ctrl+K command palette,
- * and the Tabby assistant overlay.
+ * the Tabby assistant overlay and Braise, the machine flame.
  * The layout is the single parent route in {@link App} — child pages render inside
  * React Router's `<Outlet />` so navigation never remounts chrome.
  *
@@ -47,6 +47,7 @@
  * - `./UpdateNotifier`
  * - `./CommandPalette`
  * - `./Tabby/Tabby`
+ * - `./Braise/Braise`
  *
  * ## Public surface
  * - `Layout` — exported API; see TSDoc on the symbol for behavior.
@@ -78,6 +79,7 @@ import { Sidebar, SIDEBAR_STORAGE_KEY, loadCollapsed } from "./Sidebar";
 import { UpdateNotifier } from "./UpdateNotifier";
 import { CommandPalette } from "./CommandPalette";
 import { Tabby } from "./Tabby/Tabby";
+import { Braise } from "./Braise/Braise";
 import { ActionToast } from "./ActionToast";
 import { PaletteActionProvider, usePaletteAction } from "./PaletteActionProvider";
 
@@ -133,6 +135,7 @@ export function Layout({ wsConnected }: LayoutProps) {
         <CommandPalette />
         <ActionToast />
         <Tabby />
+        <Braise />
         <Sidebar wsConnected={wsConnected} collapsed={collapsed} onToggle={toggle} />
         <main
           id="main-content"

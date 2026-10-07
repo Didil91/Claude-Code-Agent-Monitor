@@ -20,6 +20,12 @@
     "enable": "Show Tabby",
     "enableDesc": "Display the corner companion across the dashboard (⌘B to open)"
   },
+  "braise": {
+    "title": "Braise companion",
+    "description": "A small flame that mirrors your PC's load (CPU, RAM, disk, GPU).",
+    "enable": "Show Braise",
+    "enableDesc": "Display the machine flame across the dashboard; click it for a summary"
+  },
   "sound": {
     "title": "Sound",
     "description": "Short, quiet chimes for live session activity. Generated in the browser - no downloads, no tracking.",

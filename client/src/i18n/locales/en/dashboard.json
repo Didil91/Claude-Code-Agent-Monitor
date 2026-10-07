@@ -73,5 +73,33 @@
       "error": "Could not load the machine metrics.",
       "gpuUnavailable": "GPU sensor unavailable — restarting."
     }
+  },
+  "braise": {
+    "name": "Braise",
+    "open": "Open Braise, the machine companion",
+    "close": "Close Braise",
+    "hint": "Braise · drag to move",
+    "state": {
+      "idle": "Dozing — the machine is quiet",
+      "normal": "All calm",
+      "warn": "Under load",
+      "crit": "Overloaded"
+    },
+    "alert": {
+      "cpu": "The CPU is at {{value}}",
+      "ram": "RAM is at {{value}}",
+      "disk": "The disk is at {{value}}",
+      "gpuTemp": "The GPU is at {{value}}"
+    },
+    "dismiss": "Dismiss",
+    "panel": {
+      "title": "Machine summary",
+      "activeAgents": "Active agents",
+      "topProcess": "Heaviest process",
+      "noProcess": "No process data",
+      "noData": "No reading yet",
+      "openMachine": "Open Machine mode",
+      "close": "Close"
+    }
   }
 }

@@ -47,6 +47,9 @@
  *
  * ## Public surface
  * - `Tabby` — exported API; see TSDoc on the symbol for behavior.
+ * - `TabbyFlyout`, `Anchor`, `usePrefersReducedMotion` — shared with Braise
+ *   (`../Braise/Braise.tsx`), the machine flame, so both companions place their
+ *   flyouts and honour reduced motion the same way.
  *
  * ## Testing pointers
  * - Prefer colocated `__tests__` with Vitest + Testing Library for UI.
@@ -90,7 +93,7 @@ import "./tabby.css";
 const FLYOUT_GAP = 10; // px between avatar and flyout
 const VIEWPORT_MARGIN = 12; // min gap from any screen edge
 
-interface Anchor {
+export interface Anchor {
   left: number;
   top: number;
   size: number;
@@ -98,7 +101,7 @@ interface Anchor {
   openUp: boolean;
 }
 
-function usePrefersReducedMotion(): boolean {
+export function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -120,7 +123,7 @@ function usePrefersReducedMotion(): boolean {
  * changes via ResizeObserver) so a tall panel near a screen edge slides fully
  * into view instead of being cropped.
  */
-function TabbyFlyout({ anchor, children }: { anchor: Anchor; children: ReactNode }) {
+export function TabbyFlyout({ anchor, children }: { anchor: Anchor; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<CSSProperties>({ visibility: "hidden" });
 

@@ -30,6 +30,7 @@
  * - `../lib/api`
  * - `../lib/eventBus`
  * - `../components/Tabby/prefs`
+ * - `../components/Braise/prefs`
  * - `../lib/format`
  * - `../lib/push`
  * - `../components/Tip`
@@ -105,6 +106,7 @@ import {
   FolderOpen,
   Info,
   Cat,
+  Flame,
   History,
   ChevronLeft,
   ChevronRight,
@@ -125,6 +127,7 @@ import { useThemePreference } from "../hooks/useThemePreference";
 import { THEME_PREFERENCES, type ThemePreference } from "../lib/theme";
 import { isRemoteDataRefreshMessage } from "../lib/remoteDataEvents";
 import { tabbyPrefs } from "../components/Tabby/prefs";
+import { braisePrefs } from "../components/Braise/prefs";
 import {
   getSoundPrefs,
   playCue,
@@ -165,6 +168,7 @@ const SETTINGS_SECTIONS: {
     Icon: Cloud,
   },
   { id: "tabby", labelKey: "tabby.title", fallback: "Tabby", Icon: Cat },
+  { id: "braise", labelKey: "braise.title", fallback: "Braise", Icon: Flame },
   { id: "sound", labelKey: "sound.title", fallback: "Sound", Icon: Volume2 },
   { id: "notifications", labelKey: "notifications.title", Icon: Bell },
   { id: "alerts", labelKey: "alertsHub.title", Icon: BellRing },
@@ -1265,6 +1269,11 @@ export function Settings() {
   const setTabby = useCallback((v: boolean) => {
     tabbyPrefs.setEnabled(v);
     setTabbyEnabled(v);
+  }, []);
+  const [braiseEnabled, setBraiseEnabled] = useState(() => braisePrefs.getEnabled());
+  const setBraise = useCallback((v: boolean) => {
+    braisePrefs.setEnabled(v);
+    setBraiseEnabled(v);
   }, []);
   const [soundPrefs, setSoundPrefsState] = useState<SoundPrefs>(getSoundPrefs);
   // Apply a preference change, then preview it so the user hears the result of
@@ -2499,6 +2508,43 @@ export function Settings() {
               description={t(
                 "tabby.enableDesc",
                 "Display the corner companion across the dashboard (⌘B to open)"
+              )}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── BRAISE (MACHINE FLAME) ─── */}
+      <section id="braise" className="scroll-mt-24">
+        <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2 mb-1">
+          <Flame className="w-4 h-4 text-gray-500" />
+          {t("braise.title", "Braise companion")}
+        </h3>
+        <p className="text-xs text-gray-500 mb-4">
+          {t(
+            "braise.description",
+            "A small flame that mirrors your PC's load (CPU, RAM, disk, GPU)."
+          )}
+        </p>
+
+        <div className="card p-5">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                braiseEnabled
+                  ? "bg-orange-500/10 border border-orange-500/20"
+                  : "bg-surface-2 border border-border"
+              }`}
+            >
+              <Flame className={`w-5 h-5 ${braiseEnabled ? "text-orange-400" : "text-gray-500"}`} />
+            </div>
+            <Toggle
+              checked={braiseEnabled}
+              onChange={setBraise}
+              label={t("braise.enable", "Show Braise")}
+              description={t(
+                "braise.enableDesc",
+                "Display the machine flame across the dashboard; click it for a summary"
               )}
             />
           </div>
