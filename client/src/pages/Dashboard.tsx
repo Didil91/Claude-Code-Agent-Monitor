@@ -103,6 +103,7 @@ import { mergeFreshestById } from "../lib/merge-by-id";
 import { useDataScope } from "../lib/dataScope";
 import { StatCard } from "../components/StatCard";
 import { MachineTab } from "../components/machine/MachineTab";
+import { MachinePill } from "../components/machine/MachinePill";
 import { AgentCard } from "../components/AgentCard";
 import { AgentStatusBadge } from "../components/StatusBadge";
 import { EmptyState } from "../components/EmptyState";
@@ -1215,12 +1216,12 @@ export function Dashboard() {
   return (
     <div className="flex flex-col gap-8 animate-fade-in min-h-[calc(100vh-4rem)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-accent/15 flex-shrink-0 flex items-center justify-center">
             <LayoutDashboard className="w-4.5 h-4.5 text-accent" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
               <h1 className="text-lg font-semibold text-gray-100">{t("title")}</h1>
               {wsConnected ? (
                 <span className="flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
@@ -1233,6 +1234,7 @@ export function Dashboard() {
                   {t("common:offline")}
                 </span>
               )}
+              <MachinePill onOpen={() => setActiveTab("machine")} />
             </div>
             <p className="text-xs text-gray-500">{t("subtitle")}</p>
           </div>

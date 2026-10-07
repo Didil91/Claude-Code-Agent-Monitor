@@ -72,6 +72,9 @@
       "disabled": "El sensor de métricas no se está ejecutando en este servidor.",
       "error": "No se pudieron cargar las métricas de la máquina.",
       "gpuUnavailable": "Sensor de GPU no disponible — reiniciando."
+    },
+    "pill": {
+      "open": "Métricas de la máquina — abrir la pestaña Máquina"
     }
   },
   "braise": {

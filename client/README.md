@@ -204,7 +204,7 @@ client/
 │   │   ├── TodoProgressIndicator.tsx # Micro donut + portal tooltip beside Sessions status
 │   │   ├── TodoProgressPanel.tsx # Full owner-aware tracker on Session Detail
 │   │   ├── todoProgress.ts       # Shared task status colors/formatters
-│   │   ├── machine/        # Dashboard Machine tab: metric tabs + sparklines, 5-min d3 chart, top processes
+│   │   ├── machine/        # Dashboard Machine tab (metric tabs + sparklines, 5-min d3 chart, top processes) and header metrics pill
 │   │   ├── Braise/         # Braise, the floating machine flame (state from thresholds, summary card)
 │   │   └── workflows/      # D3.js workflow visualization components (12 files)
 │   │
@@ -235,6 +235,7 @@ client/
 │   │   ├── useWebSocket.ts      # Auto-reconnecting WebSocket hook
 │   │   ├── useMachineMetrics.ts # GET /api/machine + live machine.sample window
 │   │   ├── useAgentMarkers.ts # Stored events of the 5-min window → Machine-chart agent markers
+│   │   ├── useLatestMachineSample.ts # Latest machine.sample only (header pill), cleared on disconnect
 │   │   ├── useNotifications.ts  # Browser push notification triggers
 │   │   └── useSoundCues.ts      # Event-bus → synthesized audio cues
 │   │
@@ -426,6 +427,25 @@ Validate with:
 cd client && npx vitest run src/components/machine src/lib/__tests__/machine.test.ts src/lib/__tests__/machineMarkers.test.ts src/hooks/__tests__/useMachineMetrics.test.tsx src/hooks/__tests__/useAgentMarkers.test.tsx
 ```
 
+### Header metrics pill
+
+Next to the **Live** badge in the Dashboard header, on every tab,
+[`MachinePill`](src/components/machine/MachinePill.tsx) shows `CPU 20 %  RAM 51 %  Disk 2 %  GPU 39 % · 49 °C`
+from the latest `machine.sample` message ([`useLatestMachineSample`](src/hooks/useLatestMachineSample.ts) — no
+REST call, no history). Values use the same thresholds and colours as the tab (GPU colour from its temperature);
+clicking opens the Machine tab.
+
+- Missing readings are omitted (no GPU reported → no GPU; disk off Windows → no disk).
+- Hidden until the first sample, while the sensor is `unavailable` or `disabled`, and after the WebSocket
+  disconnects (no stale values).
+- Narrow screens drop readings progressively: CPU always, RAM from `sm`, disk from `md`, GPU from `lg`.
+
+Validate with:
+
+```bash
+cd client && npx vitest run src/components/machine src/lib/__tests__/machine.test.ts src/hooks/__tests__/useMachineMetrics.test.tsx src/pages/__tests__/Dashboard.machinePill.test.tsx
+```
+
 ---
 
 ## Braise (machine flame)
@@ -524,6 +544,7 @@ Server broadcasts these event types over WebSocket:
 | `remote_source.status` | `{ id, status, error?, providers?, last_sync_at? }` (`status`: `idle`/`syncing`/`ok`/`error`/`deleted`; each provider can also be `unavailable`) | Remote Data Source sync poller + `/api/remote-sources` routes |
 | `remote_data.updated` | `{ sourceId, source, label?, counters?, providers?, last_sync_at? }` | Emitted once per successful remote sync; provider-aware counters trigger stats/cost/session refetches. The server also broadcasts `session_created` / `session_updated` (and main-agent frames) for each mirrored session so Kanban/Sessions update immediately |
 | `machine.sample` | `{ sample, processes, status }` (host PC metrics, see `docs/API.md` → Machine) | Every 2 s from the machine-metrics sensor. Consumed through `useMachineMetrics` by the Dashboard Machine tab (while open) and by Braise, the machine flame (on every page unless hidden in Settings). Telemetry, not activity: the Sidebar activity counter and the Workflows auto-refresh ignore it |
+| `machine.sample` | `{ sample, processes, status }` (host PC metrics, see `docs/API.md` → Machine) | Every 2 s from the machine-metrics sensor. Consumed by the Dashboard Machine tab (`useMachineMetrics`, only while the tab is open) and the Dashboard header metrics pill (`useLatestMachineSample`). Telemetry, not activity: the Sidebar activity counter and the Workflows auto-refresh ignore it |
 
 ### EventBus Pattern
 
