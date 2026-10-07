@@ -1762,7 +1762,8 @@ export interface WSMessage {
    *  → CcConfigChangedPayload;
    *  alert_triggered/alert_updated → AlertEvent; workflow_upserted → WorkflowRun;
    *  remote_source.status → RemoteSourceStatusPayload;
-   *  remote_data.updated → RemoteDataUpdatedPayload. */
+   *  remote_data.updated → RemoteDataUpdatedPayload;
+   *  machine.sample → host PC metrics sample, sent every 2 s (see docs/API.md). */
   type:
     | "session_created"
     | "session_updated"
@@ -1780,7 +1781,8 @@ export interface WSMessage {
     | "alert_updated"
     | "workflow_upserted"
     | "remote_source.status"
-    | "remote_data.updated";
+    | "remote_data.updated"
+    | "machine.sample";
   /** The message body, whose concrete shape is selected by `type` above. */
   data:
     | Session

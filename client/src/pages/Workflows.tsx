@@ -133,7 +133,9 @@ export function Workflows() {
   // Auto-refresh on WebSocket events
   useEffect(() => {
     let debounceTimer: ReturnType<typeof setTimeout>;
-    const handler = (_msg: WSMessage) => {
+    const handler = (msg: WSMessage) => {
+      // Machine metrics stream every 2 s and would keep resetting the debounce.
+      if (msg.type === "machine.sample") return;
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(fetchData, 3000);
     };

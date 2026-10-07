@@ -473,6 +473,8 @@ The OpenAPI spec is generated from `server/openapi.js` (`createOpenApiSpec()`), 
 | `GET`   | `/api/analytics`    | Analytics aggregates for charts/trends           |
 | `GET`   | `/api/metrics`      | Prometheus / OpenMetrics exposition (text; v0.0.4) |
 
+**Host PC metrics (`GET /api/machine`).** Returns the 5-minute in-memory window of host CPU / RAM / disk / volume / GPU samples, the latest top-process snapshot and the sensor status (`server/routes/machine.js`); see [Machine Metrics Sensor](#machine-metrics-sensor).
+
 **Prometheus metrics (`GET /api/metrics`).** Exposes the dashboard's live counters — `ccam_sessions`/`ccam_agents` by status, `ccam_events_total`, `ccam_tokens_total` by kind, `ccam_websocket_clients`, `ccam_remote_sources` by enabled state, `ccam_process_uptime_seconds`/`ccam_process_resident_memory_bytes`, and `ccam_build_info{version}` — in the Prometheus v0.0.4 text-exposition format for scraping into Prometheus / Grafana (`server/routes/metrics.js`). Values come from the same `server/db.js` prepared statements the REST API uses, so they match the UI; status series are enumerated so a gauge never drops out of the exposition at zero. The route is read-only and, being under `/api`, sits behind both the Host-header (DNS-rebinding) guard and the optional `DASHBOARD_TOKEN` guard: a non-loopback scraper (e.g. Prometheus in Docker via `host.docker.internal`) must be allowlisted with `DASHBOARD_ALLOWED_HOSTS` or it gets `403 EBADHOST`, and must send the token when one is set. A ready-to-run Prometheus + Grafana stack with four auto-provisioned dashboards (default home **CCAM — Overview**) lives in [`monitoring/`](../monitoring/README.md).
 
 **Data scope (`?sources=` and `?providers=`).** `GET /api/sessions`, `/api/events`, `/api/agents`, `/api/stats`, `/api/analytics`, `/api/workflows`, workflow drill-ins, and pricing cost endpoints accept an optional source list and provider list (`claude`, `cursor`, `codex`, or a comma-separated combination). The `claude` product scope intentionally expands to Claude Code + Cursor; direct `cursor` requests remain available for stored-provider drill-ins. The filters compose, so a single Settings choice immediately scopes every page by both machine and product. `server/lib/source-filter.js` and `server/lib/provider-filter.js` build the SQL predicates; `/api/stats` and `/api/analytics` use their scoped aggregates only when a filter is present. `GET /api/sessions/facets` returns both `sources` and `providers`.
@@ -987,6 +989,12 @@ Server broadcasts JSON messages to all connected clients:
   "type": "remote_data.updated",
   "data": { "sourceId": "...", "source": "...", "label": "...?", "counters": { "imported": 0, "skipped": 0 }, "last_sync_at": "...?" }
 }
+
+// Host PC metrics sample — every 2 s (see "Machine Metrics Sensor")
+{
+  "type": "machine.sample",
+  "data": { "sample": { "ts": 0, "cpu": {...}, "ram": {...}, "disk": {...}, "volume": {...}, "gpu": {...} }, "processes": { "ts": 0, "cores": 12, "items": [...] }, "status": { "sensor": "ok", "gpu": "ok" } }
+}
 ```
 
 ### Broadcasting Logic
@@ -1315,6 +1323,10 @@ The response-item tool-call backfill runs for every discovered file once per pro
 fingerprint-changed files (its "no-op" early exit still costs a `statSync` plus two DB lookups per file);
 a file whose ingest fails is re-queued so a transient error retries instead of waiting for the file to
 grow.
+
+### Machine Metrics Sensor
+
+`startMachineMetrics` (`server/lib/machine-metrics.js`, wired into `startBackgroundServices`) samples the **host PC** for the Machine mode: CPU, RAM, disk activity, system-volume space, NVIDIA GPU (load, memory, °C) and the top processes. On Windows it runs **one long-lived PowerShell process** (`pwsh -NoProfile -NonInteractive`, falling back to `powershell.exe`) that loops over the language-independent `Win32_PerfFormattedData_*` CIM classes (CPU + disk every 2 s, processes every 5 s; never `Get-Counter`, whose counter names are translated) and prints one JSON line per reading, plus a long-lived `nvidia-smi ... -l 2`. RAM comes from `os.totalmem()`/`os.freemem()` and volume space from `fs.statfs` (30 s). Per-process CPU is divided by the core count so it reads as a share of the whole machine. Samples are kept in a **5-minute in-memory window** (nothing in SQLite), served by `GET /api/machine` and broadcast every 2 s as `machine.sample`. Degradation: no NVIDIA → no GPU block, no error; not Windows → `os.cpus()` CPU, RAM and volume only; a dead sensor restarts with 2 s → 60 s exponential backoff while `status.sensor` reads `unavailable`. The children are killed on shutdown (and on process `exit`), and the PowerShell loop also exits if the dashboard process disappears. Measured cost ≈1.3 % of a 12-core machine. Full response shape: [`docs/API.md` → Machine](../docs/API.md#machine).
 
 ### Remote Data Source Sync
 

@@ -454,6 +454,7 @@ Server broadcasts these event types over WebSocket:
 | `notification.received` | Notification object | Notification hook |
 | `remote_source.status` | `{ id, status, error?, providers?, last_sync_at? }` (`status`: `idle`/`syncing`/`ok`/`error`/`deleted`; each provider can also be `unavailable`) | Remote Data Source sync poller + `/api/remote-sources` routes |
 | `remote_data.updated` | `{ sourceId, source, label?, counters?, providers?, last_sync_at? }` | Emitted once per successful remote sync; provider-aware counters trigger stats/cost/session refetches. The server also broadcasts `session_created` / `session_updated` (and main-agent frames) for each mirrored session so Kanban/Sessions update immediately |
+| `machine.sample` | `{ sample, processes, status }` (host PC metrics, see `docs/API.md` → Machine) | Every 2 s from the machine-metrics sensor. Telemetry, not activity: the Sidebar activity counter and the Workflows auto-refresh ignore it |
 
 ### EventBus Pattern
 
