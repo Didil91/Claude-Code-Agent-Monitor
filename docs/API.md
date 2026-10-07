@@ -14,6 +14,7 @@ Complete REST API and WebSocket documentation for Agent Dashboard.
   - [Agents](#agents)
   - [Tools](#tools)
   - [Metrics](#metrics)
+  - [Machine](#machine)
   - [Pricing](#pricing)
   - [Workflows](#workflows)
   - [Settings](#settings)
@@ -710,6 +711,79 @@ scrape_configs:
 ```
 
 A ready-to-run Prometheus + Grafana stack (four auto-provisioned dashboards; default home **CCAM — Overview**) lives in [`monitoring/`](../monitoring/README.md). **npm path (no Docker):** `npm run monitoring:install` then `npm run monitoring:up` (binaries are pulled via the monitoring package's `postinstall` — there is no official `grafana`/`prometheus` server package on npm). **Docker path:** `npm run monitoring:docker:up` or `npm run docker:full:up` (set `DASHBOARD_ALLOWED_HOSTS=host.docker.internal` on the dashboard when Prometheus runs in a container). Pre-built Prometheus console: `http://localhost:9090/consoles/index.html`.
+
+---
+
+### Machine
+
+#### Host PC metrics
+
+```
+GET /api/machine
+```
+
+Returns the **host PC** metrics used by the Machine mode: a rolling window of the last 5 minutes of samples (one every 2 s, ~150 points), the latest top-process snapshot, and the sensor status. Everything lives in memory — nothing is written to SQLite, and the window is empty right after a restart. Live samples arrive over the WebSocket as [`machine.sample`](#machinesample).
+
+Collection (`server/lib/machine-metrics.js`, started with the server):
+
+| Metric | Windows source | Other OS | Cadence |
+| --- | --- | --- | --- |
+| CPU % | `Win32_PerfFormattedData_PerfOS_Processor` (`_Total`) | `os.cpus()` delta between two samples | 2 s |
+| Disk activity %, read/write bytes/s | `Win32_PerfFormattedData_PerfDisk_PhysicalDisk` (`_Total`) | — | 2 s |
+| RAM used / total | `os.totalmem()` / `os.freemem()` | same | 2 s |
+| System volume used / total | `fs.statfs` on `%SystemDrive%\` | `fs.statfs("/")` | 30 s |
+| GPU load, memory, °C | `nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits -l 2` | — | 2 s |
+| Top processes | `Win32_PerfFormattedData_PerfProc_Process` (excluding `_Total` / `Idle`) | — | 5 s |
+
+On Windows a **single long-lived PowerShell process** (`pwsh -NoProfile -NonInteractive`, falling back to `powershell.exe`) loops over the CIM classes and prints one JSON line per reading — CIM class names are language-independent, unlike `Get-Counter` counter paths (translated on e.g. `fr-FR` Windows). No admin rights are needed. `nvidia-smi` runs as a second long-lived process. Measured cost on a 12-core PC: about 1.3 % of the machine (sensor + WMI provider host), under the 2 % budget.
+
+Degradation:
+
+- **No NVIDIA GPU** (`nvidia-smi` missing or failing before its first valid line): `gpu` is `null` and `status.gpu` is `absent` — not an error, no retry.
+- **Not Windows:** CPU (from `os.cpus()`), RAM and volume only; `disk`, `gpu` and `processes` are `null`, `status.sensor` is `unsupported`.
+- **Sensor process dies:** restarted with backoff 2 s, 4 s, 8 s… capped at 60 s (reset after the first valid line); meanwhile `status.sensor` is `unavailable` (with `sensorError` and `retryInMs`), `disk`/`processes` are `null` and CPU falls back to `os.cpus()` (`cpu.source: "os"`). Readings older than 3 intervals are dropped.
+- **Server shutdown:** the PowerShell and `nvidia-smi` children are killed; the PowerShell loop also exits on its own if the dashboard process disappears.
+- **Not started** (e.g. an embedding host that never calls `startBackgroundServices()`): `status.sensor` is `disabled` and `samples` is empty.
+
+**Response:**
+
+```json
+{
+  "platform": "win32",
+  "cores": 12,
+  "intervalMs": 2000,
+  "processIntervalMs": 5000,
+  "windowMs": 300000,
+  "status": { "sensor": "ok", "gpu": "ok", "sensorError": null, "retryInMs": null },
+  "samples": [
+    {
+      "ts": 1791364457671,
+      "cpu": { "percent": 11, "source": "cim" },
+      "ram": { "usedBytes": 17766219776, "totalBytes": 34057424896, "percent": 52.2 },
+      "disk": { "activePercent": 5, "readBytesPerSec": 0, "writeBytesPerSec": 222626 },
+      "volume": { "path": "C:\\", "usedBytes": 348062642176, "totalBytes": 1004801093632, "percent": 34.6 },
+      "gpu": { "index": 0, "utilPercent": 39, "memUsedMiB": 1024, "memTotalMiB": 4096, "memPercent": 25, "temperatureC": 49, "lowPower": false }
+    }
+  ],
+  "processes": {
+    "ts": 1791364455012,
+    "cores": 12,
+    "items": [
+      { "name": "claude", "pid": 18452, "parentPid": 9120, "cpuPercent": 4.2, "memoryBytes": 412450816 }
+    ]
+  }
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `samples[]` | Oldest first; `ts` is epoch ms. Any block can be `null` when its source is unavailable. |
+| `cpu.source` | `cim` (Windows perf counters) or `os` (`os.cpus()` fallback). |
+| `disk.activePercent` | `100 − % Idle Time` of all physical disks, clamped to 0–100. |
+| `gpu` | First NVIDIA GPU. `null` fields mean `[N/A]` / `[Not Supported]`. `lowPower: true` means a laptop GPU is powered down (nvidia-smi reports `[Unknown Error]` for utilization) and `utilPercent` is reported as `0`. |
+| `processes.items[]` | Union of the top 20 processes by CPU and the top 20 by memory, sorted by CPU. `cpuPercent` is a share of the **whole machine** (the per-core counter divided by `cores`); `memoryBytes` is the private working set; `name` has the `#N` instance suffix removed. `null` off Windows or when stale. |
+| `status.sensor` | `starting` · `ok` · `unavailable` · `unsupported` (not Windows) · `disabled`. |
+| `status.gpu` | `starting` · `ok` · `unavailable` (died after working; restarting) · `absent` · `disabled`. |
 
 ---
 
@@ -1667,6 +1741,14 @@ Broadcast when a remote data source changes sync state (during/after `POST /api/
 { "type": "remote_source.status", "data": { "id": "4d1f0e2a-7b9c-4c33-8a21-9e0f7b6d4c11", "status": "ok", "providers": { "claude": "unavailable", "codex": "ok" }, "last_sync_at": "2026-07-22T18:41:55.117Z" } }
 { "type": "remote_source.status", "data": { "id": "4d1f0e2a-7b9c-4c33-8a21-9e0f7b6d4c11", "status": "error", "error": "ssh exited with code 255" } }
 { "type": "remote_source.status", "data": { "id": "4d1f0e2a-7b9c-4c33-8a21-9e0f7b6d4c11", "status": "deleted" } }
+```
+
+#### machine.sample
+
+Broadcast every 2 s by `server/lib/machine-metrics.js` while the server runs (not persisted). `data.sample` has the same shape as one entry of `GET /api/machine` → `samples`; `data.processes` is the latest process snapshot (or `null`) and `data.status` the sensor status. Clients that react to "any message" should ignore this type.
+
+```json
+{ "type": "machine.sample", "data": { "sample": { "ts": 1791364457671, "cpu": { "percent": 11, "source": "cim" }, "ram": { "usedBytes": 17766219776, "totalBytes": 34057424896, "percent": 52.2 }, "disk": null, "volume": null, "gpu": null }, "processes": null, "status": { "sensor": "starting", "gpu": "starting", "sensorError": null, "retryInMs": null } } }
 ```
 
 ### Event Flow

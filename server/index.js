@@ -71,6 +71,7 @@ const alertsRouter = require("./routes/alerts");
 const webhooksRouter = require("./routes/webhooks");
 const remoteSourcesRouter = require("./routes/remote-sources");
 const metricsRouter = require("./routes/metrics");
+const machineRouter = require("./routes/machine");
 
 const APP_VERSION = (() => {
   try {
@@ -116,6 +117,7 @@ function createApp() {
   app.use("/api/webhooks", webhooksRouter);
   app.use("/api/remote-sources", remoteSourcesRouter);
   app.use("/api/metrics", metricsRouter);
+  app.use("/api/machine", machineRouter);
   app.get("/favicon.svg", (_req, res) => {
     res.type("image/svg+xml").sendFile(DASHBOARD_FAVICON_PATH);
   });
@@ -470,6 +472,15 @@ function startBackgroundServices() {
   const { startUpdateScheduler } = require("./update-scheduler");
   const { broadcast } = require("./websocket");
   startUpdateScheduler({ broadcast });
+  // Host PC metrics for the Machine mode (CPU/RAM/disk/GPU/processes), kept in a
+  // 5-minute in-memory window and broadcast as `machine.sample`. Its child
+  // processes are killed on exit.
+  try {
+    const { startMachineMetrics } = require("./lib/machine-metrics");
+    startMachineMetrics({ broadcast });
+  } catch (err) {
+    console.warn("machine metrics failed to start:", err.message);
+  }
   try {
     const { startCcWatcher } = require("./lib/cc-watcher");
     startCcWatcher({ broadcast });
@@ -1391,6 +1402,13 @@ if (require.main === module) {
     }
     shutdownInProgress = true;
     console.log(`\n${signal} received — shutting down gracefully… (hit Ctrl+C again to force)`);
+
+    // Kill the machine-metrics sensor children (PowerShell, nvidia-smi).
+    try {
+      require("./lib/machine-metrics").stopMachineMetrics();
+    } catch {
+      /* not started */
+    }
 
     // Drop realtime clients first — open WS sockets otherwise hold the HTTP
     // server open and stall the shutdown until the force-exit backstop fires.

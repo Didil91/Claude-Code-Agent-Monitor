@@ -458,6 +458,8 @@ export function Sidebar({ wsConnected, collapsed, onToggle }: SidebarProps) {
         }
         return;
       }
+      // Periodic machine metrics are telemetry, not dashboard activity.
+      if (msg.type === "machine.sample") return;
       const now = Date.now();
       eventCountRef.current += 1;
       lastEventRef.current = { type: msg.type, at: now };

@@ -41,6 +41,7 @@ const EXPECTED_API_PATHS = [
   "/api/events/facets",
   "/api/stats",
   "/api/metrics",
+  "/api/machine",
   "/api/analytics",
   "/api/hooks/event",
   "/api/hooks/codex",
@@ -667,6 +668,18 @@ describe("Stats API", () => {
     const res = await fetch("/api/stats");
     assert.ok(res.body.total_sessions >= 2);
     assert.ok(res.body.total_agents >= 2);
+  });
+});
+
+describe("Machine API", () => {
+  it("should return the machine snapshot shape (sensor not started in tests)", async () => {
+    const res = await fetch("/api/machine");
+    assert.equal(res.status, 200);
+    assert.equal(res.body.status.sensor, "disabled");
+    assert.ok(Array.isArray(res.body.samples));
+    assert.equal(res.body.intervalMs, 2000);
+    assert.equal(res.body.windowMs, 300000);
+    assert.equal(typeof res.body.cores, "number");
   });
 });
 

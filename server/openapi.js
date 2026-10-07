@@ -80,6 +80,7 @@ function createOpenApiSpec() {
     tags: [
       { name: "Health", description: "Service liveness checks" },
       { name: "Metrics", description: "Prometheus / OpenMetrics scrape endpoint" },
+      { name: "Machine", description: "Host PC metrics (CPU, RAM, disk, GPU, processes)" },
       { name: "Sessions", description: "Claude Code, Cursor, and Codex session lifecycle" },
       { name: "Agents", description: "Main/subagent records and status" },
       { name: "Events", description: "Event stream persistence" },
@@ -2234,6 +2235,62 @@ function createOpenApiSpec() {
                     "# HELP ccam_sessions Number of sessions by lifecycle status.\n" +
                     "# TYPE ccam_sessions gauge\n" +
                     'ccam_sessions{status="active"} 3\n',
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/machine": {
+        get: {
+          tags: ["Machine"],
+          summary: "Host PC metrics rolling window",
+          operationId: "getMachineMetrics",
+          description:
+            "Returns the last 5 minutes of host PC samples (one every 2 s: CPU, RAM, " +
+            "disk activity, system-volume usage, NVIDIA GPU), the latest top-process " +
+            "snapshot (every 5 s, Windows only) and the sensor status. Kept in memory " +
+            "only. Live samples arrive over the WebSocket as `machine.sample`. " +
+            "Status `disabled` means the sensor was not started by this host.",
+          responses: {
+            200: {
+              description: "Machine metrics snapshot",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      platform: { type: "string", example: "win32" },
+                      cores: { type: "integer", example: 12 },
+                      intervalMs: { type: "integer", example: 2000 },
+                      processIntervalMs: { type: "integer", example: 5000 },
+                      windowMs: { type: "integer", example: 300000 },
+                      status: {
+                        type: "object",
+                        properties: {
+                          sensor: {
+                            type: "string",
+                            enum: ["starting", "ok", "unavailable", "unsupported", "disabled"],
+                          },
+                          gpu: {
+                            type: "string",
+                            enum: ["starting", "ok", "unavailable", "absent", "disabled"],
+                          },
+                          sensorError: { type: "string", nullable: true },
+                          retryInMs: { type: "integer", nullable: true },
+                        },
+                      },
+                      samples: {
+                        type: "array",
+                        items: { type: "object", additionalProperties: true },
+                      },
+                      processes: {
+                        type: "object",
+                        nullable: true,
+                        additionalProperties: true,
+                      },
+                    },
+                  },
                 },
               },
             },
