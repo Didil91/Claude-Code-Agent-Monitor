@@ -481,6 +481,16 @@ function startBackgroundServices() {
   } catch (err) {
     console.warn("machine metrics failed to start:", err.message);
   }
+  // Link running Claude Code sessions to their process from Claude Code's own
+  // per-process files, so per-session CPU works right after a restart, before
+  // the session's next hook.
+  try {
+    const { startClaudeSessionFileSync } = require("./lib/claude-session-files");
+    const { sessionProcesses } = require("./lib/session-processes");
+    startClaudeSessionFileSync({ registry: sessionProcesses });
+  } catch (err) {
+    console.warn("claude session file sync failed to start:", err.message);
+  }
   try {
     const { startCcWatcher } = require("./lib/cc-watcher");
     startCcWatcher({ broadcast });

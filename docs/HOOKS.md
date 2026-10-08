@@ -163,7 +163,10 @@ descendants (`server/lib/process-tree.js`) and broadcasts it as
 `processes.cpuBySession` in `machine.sample`. Main agent cards show it live as a tag
 next to the status (`client/src/components/machine/SessionCpu.tsx`): a ~20 s moving
 average that appears above 1.5 % and hides below 0.5 % (`client/src/lib/sessionCpu.ts`). A link is dropped once its process is
-gone or its PID belongs to another program; it comes back with the session's next hook.
+gone or its PID belongs to another program. The same links are also read every 30 s from
+Claude Code's own per-process files (`~/.claude/sessions/<pid>.json`, only `pid` and
+`sessionId` are used — `server/lib/claude-session-files.js`), so an idle session gets its
+CPU right after a dashboard restart, without waiting for its next hook.
 
 ---
 
