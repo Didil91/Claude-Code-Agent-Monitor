@@ -16,7 +16,7 @@ interface BraiseFlameProps {
   label: string;
 }
 
-export function BraiseFlame({ state, reducedMotion = false, size = 48, label }: BraiseFlameProps) {
+export function BraiseFlame({ state, reducedMotion = false, size = 60, label }: BraiseFlameProps) {
   return (
     <svg
       className="braise-flame"

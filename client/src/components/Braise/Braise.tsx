@@ -26,7 +26,7 @@ import { braisePrefs, defaultBraisePos } from "./prefs";
 import "./braise.css";
 
 /** Button footprint in px (smaller than Tabby's 60). */
-export const BRAISE_SIZE = 48;
+export const BRAISE_SIZE = 60;
 
 /** WebSocket messages that can change the active-agent count. */
 const AGENT_EVENTS = new Set<WSMessage["type"]>([
