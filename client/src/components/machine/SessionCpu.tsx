@@ -2,7 +2,8 @@
  * @file SessionCpu.tsx
  * @description CPU tag of one session — its claude process plus every command it
  * spawned — shaped like the status badges it sits next to on agent cards: gauge icon,
- * value and a small fill bar, tinted by the Machine-mode CPU thresholds.
+ * value and a small fill bar, tinted by the Machine-mode CPU thresholds. The value is
+ * already smoothed and hidden while the session idles (see `lib/sessionCpu`).
  * `SessionCpuView` is pure (value in, markup out); `SessionCpu` wires it to the live
  * WebSocket through `useSessionCpu`. Renders nothing without a reading, so cards stay
  * unchanged off Windows, for remote sessions or before the session's first hook.
@@ -29,7 +30,8 @@ export function SessionCpuView({ value }: { value: number | null }) {
   const { t, i18n } = useTranslation("dashboard");
   if (value === null) return null;
   const level = thresholdLevel("cpu", value);
-  const percent = formatPercent(value, i18n.language, 1);
+  // One decimal only where it matters: "3,4 %" but "27 %".
+  const percent = formatPercent(value, i18n.language, value >= 10 ? 0 : 1);
   const fill = Math.min(100, Math.max(MIN_FILL_PERCENT, value));
   return (
     <span

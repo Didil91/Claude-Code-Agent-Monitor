@@ -36,10 +36,11 @@ describe("SessionCpuView", () => {
     expect(badge).toHaveAttribute("data-level", "normal");
   });
 
-  it("flags a heavy session", () => {
-    render(<SessionCpuView value={95} />);
+  it("flags a heavy session, without decimals past 10 %", () => {
+    render(<SessionCpuView value={95.4} />);
     expect(screen.getByTestId("session-cpu")).toHaveAttribute("data-level", "crit");
-    expect(screen.getByTestId("session-cpu-fill").style.width).toBe("95%");
+    expect(screen.getByTestId("session-cpu").textContent).toMatch(/^95\s?%$/);
+    expect(screen.getByTestId("session-cpu-fill").style.width).toBe("95.4%");
   });
 
   it("keeps a sliver of fill for a near-idle session", () => {

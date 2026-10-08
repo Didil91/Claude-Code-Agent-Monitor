@@ -160,8 +160,9 @@ The server keeps an in-memory map `session_id → claude_pid`
 (`server/lib/session-processes.js`, ignored for remote pushes). On each process snapshot
 the Machine sensor sums, per session, the CPU of that claude process and all its
 descendants (`server/lib/process-tree.js`) and broadcasts it as
-`processes.cpuBySession` in `machine.sample`. Main agent cards show it live
-(`client/src/components/machine/SessionCpu.tsx`). A link is dropped once its process is
+`processes.cpuBySession` in `machine.sample`. Main agent cards show it live as a tag
+next to the status (`client/src/components/machine/SessionCpu.tsx`): a ~20 s moving
+average that appears above 1.5 % and hides below 0.5 % (`client/src/lib/sessionCpu.ts`). A link is dropped once its process is
 gone or its PID belongs to another program; it comes back with the session's next hook.
 
 ---
