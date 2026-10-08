@@ -73,6 +73,10 @@
       "error": "Could not load the machine metrics.",
       "gpuUnavailable": "GPU sensor unavailable — restarting."
     },
+    "sessionCpu": {
+      "title": "CPU of this session: claude and the commands it runs",
+      "label": "Session CPU: {{value}}"
+    },
     "pill": {
       "open": "Machine metrics — open the Machine tab"
     }

@@ -73,6 +73,10 @@
       "error": "Không tải được chỉ số máy.",
       "gpuUnavailable": "Cảm biến GPU không khả dụng — đang khởi động lại."
     },
+    "sessionCpu": {
+      "title": "CPU của phiên này: claude và các lệnh nó chạy",
+      "label": "CPU của phiên: {{value}}"
+    },
     "pill": {
       "open": "Chỉ số máy — mở tab Máy"
     }

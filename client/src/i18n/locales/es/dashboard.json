@@ -73,6 +73,10 @@
       "error": "No se pudieron cargar las métricas de la máquina.",
       "gpuUnavailable": "Sensor de GPU no disponible — reiniciando."
     },
+    "sessionCpu": {
+      "title": "CPU de esta sesión: claude y los comandos que ejecuta",
+      "label": "CPU de la sesión: {{value}}"
+    },
     "pill": {
       "open": "Métricas de la máquina — abrir la pestaña Máquina"
     }

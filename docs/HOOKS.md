@@ -149,6 +149,21 @@ graph TB
     style FastExec fill:#10B981
 ```
 
+### Session ↔ process link (`claude_pid`)
+
+Claude Code exports its own PID to every child process as `CLAUDE_PID`. The hook
+handler forwards it next to the event: `{ hook_type, data, claude_pid }`. Hooks run
+through short-lived shells (`claude.exe → bash.exe → bash.exe → node.exe`), so the
+handler's own parent PID would not lead back to Claude Code.
+
+The server keeps an in-memory map `session_id → claude_pid`
+(`server/lib/session-processes.js`, ignored for remote pushes). On each process snapshot
+the Machine sensor sums, per session, the CPU of that claude process and all its
+descendants (`server/lib/process-tree.js`) and broadcasts it as
+`processes.cpuBySession` in `machine.sample`. Main agent cards show it live
+(`client/src/components/machine/SessionCpu.tsx`). A link is dropped once its process is
+gone or its PID belongs to another program; it comes back with the session's next hook.
+
 ---
 
 ## Hook Installation

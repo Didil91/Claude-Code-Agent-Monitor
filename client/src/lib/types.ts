@@ -1843,6 +1843,8 @@ export interface MachineProcesses {
   items: MachineProcess[];
   /** CPU % of `claude` processes plus every descendant, over the full process list. */
   claudeTreeCpuPercent?: number;
+  /** Same reading per session id, for sessions whose hooks reported their claude PID. */
+  cpuBySession?: Record<string, number>;
 }
 
 /** Sensor health as reported by the server. */

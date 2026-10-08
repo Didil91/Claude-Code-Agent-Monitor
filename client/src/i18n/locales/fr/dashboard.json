@@ -73,6 +73,10 @@
       "error": "Impossible de charger les métriques de la machine.",
       "gpuUnavailable": "Capteur GPU indisponible — redémarrage en cours."
     },
+    "sessionCpu": {
+      "title": "CPU de cette session : claude et les commandes qu’il lance",
+      "label": "CPU de la session : {{value}}"
+    },
     "pill": {
       "open": "Métriques de la machine — ouvrir l’onglet Machine"
     }

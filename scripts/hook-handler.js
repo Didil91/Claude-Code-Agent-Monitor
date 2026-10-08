@@ -39,6 +39,17 @@ function resolvePorts() {
 
 const ports = resolvePorts();
 
+/**
+ * PID of the Claude Code process running this session. Claude Code exports it to
+ * every child as `CLAUDE_PID`; hooks run through short-lived shells, so our own
+ * parent PID would not lead back to it. Lets the dashboard measure each session's
+ * CPU (its claude process plus everything it spawns).
+ */
+function claudePid() {
+  const pid = Number(process.env.CLAUDE_PID);
+  return Number.isInteger(pid) && pid > 0 ? pid : null;
+}
+
 let input = "";
 
 process.stdin.setEncoding("utf8");
@@ -55,6 +66,8 @@ process.stdin.on("end", () => {
     hook_type: hookType,
     data: parsedData,
   };
+  const pid = claudePid();
+  if (pid !== null) payload.claude_pid = pid;
 
   // Give the kernel one tick to hand the buffered request bytes to the local
   // server before our sockets close, then exit. The hook returns in ms.

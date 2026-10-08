@@ -6,13 +6,14 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import type { ReactElement } from "react";
 // render is used inside renderCard helper
 import { MemoryRouter, useLocation } from "react-router";
 import { AgentCard } from "../AgentCard";
 import type { Agent, Session, SessionTodoSummary } from "../../lib/types";
 import { formatModelName, fmtCost } from "../../lib/format";
+import { eventBus } from "../../lib/eventBus";
 
 function renderCard(element: ReactElement) {
   return render(<MemoryRouter>{element}</MemoryRouter>);
@@ -217,6 +218,27 @@ describe("AgentCard", () => {
       />
     );
     expect(screen.getByText(fmtCost(646.5))).toBeInTheDocument();
+  });
+
+  it("shows the live session CPU on a running main card only", () => {
+    const cpuSample = {
+      type: "machine.sample",
+      data: {
+        sample: { ts: 1, cpu: null, ram: null, disk: null, volume: null, gpu: null },
+        processes: { ts: 1, cores: 8, items: [], cpuBySession: { "sess-1": 6.5 } },
+        status: null,
+      },
+      timestamp: "",
+    } as never;
+    renderCard(
+      <>
+        <AgentCard agent={makeAgent()} />
+        <AgentCard agent={makeAgent({ id: "sub-1", type: "subagent", subagent_type: "qa" })} />
+        <AgentCard agent={makeAgent({ id: "done", ended_at: "2026-03-05T10:05:00.000Z" })} />
+      </>
+    );
+    act(() => eventBus.publish(cpuSample));
+    expect(screen.getByTestId("session-cpu").textContent).toMatch(/6[.,]5/);
   });
 
   it("shows no cost on a subagent card with no recorded usage", () => {

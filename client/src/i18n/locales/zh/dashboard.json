@@ -73,6 +73,10 @@
       "error": "无法加载本机指标。",
       "gpuUnavailable": "GPU 传感器不可用 — 正在重启。"
     },
+    "sessionCpu": {
+      "title": "此会话的 CPU：claude 及其运行的命令",
+      "label": "会话 CPU：{{value}}"
+    },
     "pill": {
       "open": "本机指标 — 打开“本机”标签页"
     }

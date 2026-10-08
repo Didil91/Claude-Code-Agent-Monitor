@@ -26,6 +26,7 @@ const { getRemotePushToken, extractHeaderOnlyToken, tokensMatch } = require("../
 const { REMOTE_PROVIDERS, assertProvider } = require("../lib/remote-sync");
 const { normalizeSpeed, normalizeGeo, normalizeTier } = require("../lib/token-usage");
 const { isCursorTranscriptPath } = require("../lib/cursor-home");
+const { sessionProcesses } = require("../lib/session-processes");
 
 const router = Router();
 
@@ -1402,6 +1403,10 @@ router.post("/event", (req, res) => {
   }
 
   res.json({ ok: true, event: result });
+
+  // Link the session to its local claude process for per-session CPU. A PID
+  // pushed from another machine means nothing here.
+  if (!remotePush) sessionProcesses.record(data.session_id, req.body.claude_pid);
 
   // Evaluate event-driven alert rules after the ingest transaction committed
   // and the response is on its way — alerting must never slow down or fail

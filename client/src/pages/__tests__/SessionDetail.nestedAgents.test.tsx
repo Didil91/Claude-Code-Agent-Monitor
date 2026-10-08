@@ -103,6 +103,7 @@ vi.mock("../../lib/eventBus", () => ({
       eventBusHandlers.add(handler);
       return () => eventBusHandlers.delete(handler);
     }),
+    onConnection: vi.fn(() => () => {}),
   },
 }));
 

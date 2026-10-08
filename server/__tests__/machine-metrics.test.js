@@ -11,6 +11,7 @@ const { EventEmitter } = require("node:events");
 const { PassThrough } = require("node:stream");
 
 const mm = require("../lib/machine-metrics");
+const { createSessionProcessRegistry } = require("../lib/session-processes");
 
 // ── Fakes ───────────────────────────────────────────────────────────────────
 
@@ -321,7 +322,7 @@ describe("claudeTreeCpuPercent", () => {
 // ── Supervisor and orchestrator ─────────────────────────────────────────────
 
 describe("createMachineMetrics on Windows", () => {
-  function setup(spawnBehaviour) {
+  function setup(spawnBehaviour, extraOptions = {}) {
     const spawn = fakeSpawn(spawnBehaviour);
     const timers = fakeTimers();
     const sent = [];
@@ -335,6 +336,7 @@ describe("createMachineMetrics on Windows", () => {
       statfs: (_p, cb) => cb(null, { bsize: 4096, blocks: 1000, bfree: 250 }),
       now: () => clock,
       broadcast: (type, data) => sent.push({ type, data }),
+      ...extraOptions,
     });
     return { spawn, timers, sent, fos, metrics, advance: (ms) => (clock += ms) };
   }
@@ -402,6 +404,25 @@ describe("createMachineMetrics on Windows", () => {
     const procs = metrics.snapshot().processes;
     assert.ok(!procs.items.some((p) => p.pid === 44), "node child is outside the top list");
     assert.equal(procs.claudeTreeCpuPercent, 2); // 8 % of one core on 4 cores
+    metrics.stop();
+  });
+
+  it("reports the CPU of each session linked to its claude process", async () => {
+    const sessionRegistry = createSessionProcessRegistry();
+    const { spawn, metrics } = setup(undefined, { sessionRegistry });
+    sessionRegistry.record("session-a", 42);
+    metrics.start();
+    const ps = spawn.byCommand("pwsh")[0];
+    const items = [
+      { name: "claude", pid: 42, ppid: 7, cpu: 4, mem: 10 },
+      { name: "bash", pid: 43, ppid: 42, cpu: 0, mem: 1 },
+      { name: "node", pid: 44, ppid: 43, cpu: 12, mem: 1 },
+      { name: "claude", pid: 50, ppid: 7, cpu: 40, mem: 10 }, // unlinked session
+    ];
+    ps.child.writeLine(JSON.stringify({ type: "proc", items }));
+    await flush();
+
+    assert.deepEqual(metrics.snapshot().processes.cpuBySession, { "session-a": 4 });
     metrics.stop();
   });
 

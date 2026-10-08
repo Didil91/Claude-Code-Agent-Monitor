@@ -15,6 +15,7 @@ import {
 import {
   appendToWindow,
   claudeCpuPercent,
+  sessionCpuPercent,
   isClaudeProcess,
   metricLevel,
   topProcesses,
@@ -85,6 +86,14 @@ describe("machine helpers", () => {
     const items = [proc("claude", 2.5, 1, 1), proc("claude", 1.5, 1, 2), proc("node", 9, 1, 3)];
     expect(claudeCpuPercent({ ts: 1, cores: 8, items })).toBe(4);
     expect(claudeCpuPercent(null)).toBeNull();
+  });
+
+  it("reads one session's CPU, null when the server has none", () => {
+    const processes = { ts: 1, cores: 8, items: [], cpuBySession: { s1: 7.5 } };
+    expect(sessionCpuPercent(processes, "s1")).toBe(7.5);
+    expect(sessionCpuPercent(processes, "s2")).toBeNull();
+    expect(sessionCpuPercent({ ts: 1, cores: 8, items: [] }, "s1")).toBeNull();
+    expect(sessionCpuPercent(null, "s1")).toBeNull();
   });
 
   it("prefers the server's claude process-tree CPU when present", () => {

@@ -73,6 +73,10 @@
       "error": "머신 지표를 불러오지 못했습니다.",
       "gpuUnavailable": "GPU 센서를 사용할 수 없음 — 다시 시작하는 중입니다."
     },
+    "sessionCpu": {
+      "title": "이 세션의 CPU: claude 및 실행한 명령",
+      "label": "세션 CPU: {{value}}"
+    },
     "pill": {
       "open": "머신 지표 — 머신 탭 열기"
     }

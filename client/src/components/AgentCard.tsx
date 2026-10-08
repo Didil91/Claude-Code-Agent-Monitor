@@ -63,6 +63,7 @@ import { Bot, GitBranch, Clock, Wrench, Cpu, Coins } from "lucide-react";
 import { useNavigate } from "react-router";
 import { AgentStatusBadge } from "./StatusBadge";
 import { TodoProgressIndicator } from "./TodoProgressIndicator";
+import { SessionCpu } from "./machine/SessionCpu";
 import { effectiveAgentStatus, isAgentAwaitingInput, agentAwaitingReason } from "../lib/types";
 import type { Agent, Session } from "../lib/types";
 import { formatDuration, timeAgo, formatModelName, pathBasename, fmtCost } from "../lib/format";
@@ -300,6 +301,9 @@ export function AgentCard({ agent, session, label, onClick }: AgentCardProps) {
             {fmtCost(cost)}
           </span>
         )}
+        {/* Live CPU of the session's claude process and its commands. Main card
+            only: subagents run inside that same process. */}
+        {isMain && !isTransient && !agent.ended_at && <SessionCpu sessionId={agent.session_id} />}
         {agent.ended_at ? (
           <>
             <span className="flex items-center gap-1 flex-shrink-0">

@@ -45,6 +45,18 @@ export function claudeCpuPercent(processes: MachineProcesses | null): number | n
     .reduce((sum, p) => sum + (Number.isFinite(p.cpuPercent) ? p.cpuPercent : 0), 0);
 }
 
+/**
+ * CPU share of one session's claude process and everything it spawned, or null when
+ * the server has no reading for it (no PID reported yet, process gone, not Windows).
+ */
+export function sessionCpuPercent(
+  processes: MachineProcesses | null,
+  sessionId: string
+): number | null {
+  const value = processes?.cpuBySession?.[sessionId];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 /** The `count` heaviest processes by CPU or by memory (ties broken by the other key). */
 export function topProcesses(
   items: readonly MachineProcess[],

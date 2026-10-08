@@ -92,6 +92,25 @@ describe("hook-handler non-blocking delivery", () => {
     }
   });
 
+  it("forwards Claude Code's CLAUDE_PID as claude_pid, and only a valid one", async () => {
+    const { server, port, received } = await startMockServer({ responseDelayMs: 0 });
+    try {
+      await runHandler({ port, payload: { session_id: "hh-pid" }, env: { CLAUDE_PID: "4242" } });
+      // Set to empty explicitly: the test itself may run under Claude Code.
+      await runHandler({ port, payload: { session_id: "hh-nopid" }, env: { CLAUDE_PID: "" } });
+      await runHandler({ port, payload: { session_id: "hh-bad" }, env: { CLAUDE_PID: "abc" } });
+      await new Promise((r) => setTimeout(r, 200));
+
+      const bodies = received.map((b) => JSON.parse(b));
+      const bySession = (id) => bodies.find((b) => b.data.session_id === id);
+      assert.equal(bySession("hh-pid").claude_pid, 4242);
+      assert.equal("claude_pid" in bySession("hh-nopid"), false);
+      assert.equal("claude_pid" in bySession("hh-bad"), false);
+    } finally {
+      server.close();
+    }
+  });
+
   it("exits promptly when no dashboard is listening (connection refused)", async () => {
     // Grab a port then close it so nothing is listening there.
     const { server, port } = await startMockServer({ responseDelayMs: 0 });

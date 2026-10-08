@@ -12,6 +12,8 @@
 const os = require("os");
 const fs = require("fs");
 const childProcess = require("child_process");
+const { isClaudeProcessName, childrenByParent, subtreeCpuPercent } = require("./process-tree");
+const { createSessionProcessRegistry, sessionProcesses } = require("./session-processes");
 
 const SYS_INTERVAL_MS = 2_000;
 const PROC_INTERVAL_MS = 5_000;
@@ -228,28 +230,11 @@ function selectTopProcesses(items, limit = PROCESS_LIMIT) {
 /**
  * Whole-machine CPU share of every `claude` process plus all its descendants (the shells,
  * node, git, test runners it spawns). Must run on the full process list: the top-N cut
- * would drop light children and break parent → child chains. Each process counts once,
- * even under nested claudes or parent loops. A recycled PID can in theory adopt an
- * orphan into the tree; perf counters carry no creation time to rule that out.
+ * would drop light children and break parent → child chains.
  */
-function claudeTreeCpuPercent(items) {
-  const children = new Map();
-  for (const p of items) {
-    if (p.parentPid === null || p.parentPid === p.pid) continue;
-    if (!children.has(p.parentPid)) children.set(p.parentPid, []);
-    children.get(p.parentPid).push(p);
-  }
-  const visited = new Set();
-  const stack = items.filter((p) => /^claude(\.exe)?$/i.test(p.name));
-  let total = 0;
-  while (stack.length) {
-    const p = stack.pop();
-    if (visited.has(p.pid)) continue;
-    visited.add(p.pid);
-    total += Number.isFinite(p.cpuPercent) ? p.cpuPercent : 0;
-    for (const child of children.get(p.pid) || []) stack.push(child);
-  }
-  return round1(Math.min(100, total));
+function claudeTreeCpuPercent(items, children) {
+  const roots = items.filter((p) => isClaudeProcessName(p.name)).map((p) => p.pid);
+  return subtreeCpuPercent(items, roots, children);
 }
 
 // ── PowerShell sensor script ────────────────────────────────────────────────
@@ -455,6 +440,7 @@ function createMachineMetrics(options = {}) {
     windowMs = WINDOW_MS,
     parentPid = process.pid,
     backoff = backoffDelay,
+    sessionRegistry = createSessionProcessRegistry({ now }),
   } = options;
 
   const isWindows = platform === "win32";
@@ -470,7 +456,7 @@ function createMachineMetrics(options = {}) {
   };
 
   let latestSys = null; // { ts, cpuPercent, disk }
-  let latestProc = null; // { ts, items, claudeTreeCpuPercent }
+  let latestProc = null; // { ts, items, claudeTreeCpuPercent, cpuBySession }
   const gpus = new Map(); // index -> { ts, ...reading }
   let volume = null;
   let prevCpuTimes = null;
@@ -487,10 +473,13 @@ function createMachineMetrics(options = {}) {
     if (rec.type === "sys") {
       latestSys = { ts, cpuPercent: rec.cpuPercent, disk: rec.disk };
     } else if (rec.type === "proc") {
+      // Tree readings need the full list: the top-N cut breaks parent → child chains.
+      const children = childrenByParent(rec.items);
       latestProc = {
         ts,
         items: selectTopProcesses(rec.items),
-        claudeTreeCpuPercent: claudeTreeCpuPercent(rec.items),
+        claudeTreeCpuPercent: claudeTreeCpuPercent(rec.items, children),
+        cpuBySession: sessionRegistry.cpuBySession(rec.items, children),
       };
     } else {
       status.sensorError = rec.message || null;
@@ -587,9 +576,14 @@ function createMachineMetrics(options = {}) {
 
   function getProcesses() {
     const p = fresh(latestProc, procIntervalMs);
-    return p
-      ? { ts: p.ts, cores, items: p.items, claudeTreeCpuPercent: p.claudeTreeCpuPercent }
-      : null;
+    if (!p) return null;
+    return {
+      ts: p.ts,
+      cores,
+      items: p.items,
+      claudeTreeCpuPercent: p.claudeTreeCpuPercent,
+      cpuBySession: p.cpuBySession,
+    };
   }
 
   function getStatus() {
@@ -710,7 +704,7 @@ let exitHookInstalled = false;
 
 function startMachineMetrics({ broadcast } = {}) {
   if (instance) return instance;
-  instance = createMachineMetrics({ broadcast });
+  instance = createMachineMetrics({ broadcast, sessionRegistry: sessionProcesses });
   instance.start();
   if (!exitHookInstalled) {
     exitHookInstalled = true;

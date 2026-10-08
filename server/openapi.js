@@ -1019,6 +1019,12 @@ function createOpenApiSpec() {
               },
               additionalProperties: true,
             },
+            claude_pid: {
+              type: "integer",
+              minimum: 1,
+              description:
+                "PID of the Claude Code process running the session (its `CLAUDE_PID`), used for per-session CPU. Optional; ignored for remote pushes.",
+            },
           },
         },
         HookEventResponse: {
@@ -2287,6 +2293,24 @@ function createOpenApiSpec() {
                       processes: {
                         type: "object",
                         nullable: true,
+                        properties: {
+                          ts: { type: "integer" },
+                          cores: { type: "integer" },
+                          items: {
+                            type: "array",
+                            items: { type: "object", additionalProperties: true },
+                          },
+                          claudeTreeCpuPercent: {
+                            type: "number",
+                            description: "CPU % of every claude process plus all its descendants",
+                          },
+                          cpuBySession: {
+                            type: "object",
+                            additionalProperties: { type: "number" },
+                            description:
+                              "CPU % of each session's claude process plus its descendants, by session id (sessions whose hooks reported a claude_pid)",
+                          },
+                        },
                         additionalProperties: true,
                       },
                     },
