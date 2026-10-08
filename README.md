@@ -1335,7 +1335,7 @@ companion `.meta.json` sidecars, and archives (`.zip`, `.tar`,
 Both canonical Claude Code layouts are recognized automatically:
 `<project>/<sessionId>/subagents/agent-*.jsonl` (default) and
 `<project>/subagents/<sessionId>/agent-*.jsonl` (alternative).
-For Codex, the importer recognises recursive `rollout-*.jsonl` session files
+For Codex, the importer recognizes recursive `rollout-*.jsonl` session files
 (including loose JSONL files with `session_meta`) and an optional
 `session_index.jsonl` for native session names.
 
