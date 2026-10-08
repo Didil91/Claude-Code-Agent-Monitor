@@ -255,6 +255,9 @@ export function AgentCard({ agent, session, label, onClick }: AgentCardProps) {
           {session?.todo_summary && (
             <TodoProgressIndicator progress={session.todo_summary} stopClickPropagation />
           )}
+          {/* Live CPU of the session's claude process and its commands. Main card
+              only: subagents run inside that same process. */}
+          {isMain && !isTransient && !agent.ended_at && <SessionCpu sessionId={agent.session_id} />}
           <AgentStatusBadge
             status={status}
             reason={agentAwaitingReason(agent)}
@@ -301,9 +304,6 @@ export function AgentCard({ agent, session, label, onClick }: AgentCardProps) {
             {fmtCost(cost)}
           </span>
         )}
-        {/* Live CPU of the session's claude process and its commands. Main card
-            only: subagents run inside that same process. */}
-        {isMain && !isTransient && !agent.ended_at && <SessionCpu sessionId={agent.session_id} />}
         {agent.ended_at ? (
           <>
             <span className="flex items-center gap-1 flex-shrink-0">

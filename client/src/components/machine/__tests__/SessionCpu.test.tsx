@@ -39,6 +39,12 @@ describe("SessionCpuView", () => {
   it("flags a heavy session", () => {
     render(<SessionCpuView value={95} />);
     expect(screen.getByTestId("session-cpu")).toHaveAttribute("data-level", "crit");
+    expect(screen.getByTestId("session-cpu-fill").style.width).toBe("95%");
+  });
+
+  it("keeps a sliver of fill for a near-idle session", () => {
+    render(<SessionCpuView value={0.5} />);
+    expect(screen.getByTestId("session-cpu-fill").style.width).toBe("4%");
   });
 });
 
