@@ -57,7 +57,7 @@ const PROCESSES = [
 ];
 
 function state(over: Partial<MachineMetricsState> = {}): MachineMetricsState {
-  const samples = [sample(0), sample(1), sample(2)];
+  const samples = [sample(0, { claudeCpu: 4 }), sample(1), sample(2, { claudeCpu: 5.3 })];
   return {
     loading: false,
     error: false,
@@ -66,10 +66,6 @@ function state(over: Partial<MachineMetricsState> = {}): MachineMetricsState {
     windowMs: 300_000,
     samples,
     processes: { ts: T0 + 4000, cores: 12, items: PROCESSES },
-    claudeCpu: [
-      { ts: T0, value: 4 },
-      { ts: T0 + 4000, value: 5.3 },
-    ],
     ...over,
   };
 }
@@ -203,7 +199,7 @@ describe("MachineView", () => {
   });
 
   it("shows an empty chart state before any reading", () => {
-    renderView(state({ samples: [], processes: null, claudeCpu: [] }));
+    renderView(state({ samples: [], processes: null }));
     expect(screen.getByText("No readings yet")).toBeInTheDocument();
     expect(screen.getByTestId("machine-value-cpu")).toHaveTextContent("—");
   });

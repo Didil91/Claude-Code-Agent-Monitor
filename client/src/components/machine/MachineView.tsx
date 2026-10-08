@@ -201,15 +201,12 @@ export function MachineView({
   const gpuPresent = hasGpu(state.samples);
   const metrics = MACHINE_METRICS.filter((m) => m !== "gpu" || gpuPresent);
   const current: MachineMetric = metrics.includes(selected) ? selected : "cpu";
-  const claudeNow = state.claudeCpu[state.claudeCpu.length - 1]?.value ?? null;
 
-  const seriesFor = (metric: MachineMetric) =>
-    metric === "processes" ? state.claudeCpu : sampleSeries(metric, state.samples);
+  const seriesFor = (metric: MachineMetric) => sampleSeries(metric, state.samples);
   const maxFor = (metric: MachineMetric) =>
-    metric === "processes" ? processesMax(state.claudeCpu) : 100;
+    metric === "processes" ? processesMax(seriesFor(metric)) : 100;
 
-  const endTs =
-    latest?.ts ?? state.claudeCpu[state.claudeCpu.length - 1]?.ts ?? state.processes?.ts ?? 0;
+  const endTs = latest?.ts ?? state.processes?.ts ?? 0;
   const metricName = t(`machine.metrics.${current}`);
   const chartTitle =
     current === "processes"
@@ -228,11 +225,13 @@ export function MachineView({
       >
         {metrics.map((metric) => {
           const active = metric === current;
-          const level = metricLevel(metric, latest, claudeNow);
-          const value =
-            metric === "processes"
-              ? formatPercent(claudeNow, lng, 1)
-              : formatPercent(sampleValue(metric, latest), lng);
+          const level = metricLevel(metric, latest);
+          // claude's share is small: one decimal keeps it readable.
+          const value = formatPercent(
+            sampleValue(metric, latest),
+            lng,
+            metric === "processes" ? 1 : 0
+          );
           const temp = metric === "gpu" ? (latest?.gpu?.temperatureC ?? null) : null;
           return (
             <button

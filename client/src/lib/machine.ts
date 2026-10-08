@@ -33,19 +33,6 @@ export function isClaudeProcess(name: string): boolean {
 }
 
 /**
- * Whole-machine CPU share of the `claude` processes and everything they spawn, as
- * computed by the server; falls back to the `claude` processes alone (older server).
- */
-export function claudeCpuPercent(processes: MachineProcesses | null): number | null {
-  if (!processes) return null;
-  const tree = processes.claudeTreeCpuPercent;
-  if (typeof tree === "number" && Number.isFinite(tree)) return tree;
-  return processes.items
-    .filter((p) => isClaudeProcess(p.name))
-    .reduce((sum, p) => sum + (Number.isFinite(p.cpuPercent) ? p.cpuPercent : 0), 0);
-}
-
-/**
  * CPU share of one session's claude process and everything it spawned, or null when
  * the server has no reading for it (no PID reported yet, process gone, not Windows).
  */
@@ -70,7 +57,7 @@ export function topProcesses(
     .slice(0, count);
 }
 
-/** Percent value shown for `metric` in a sample (`processes` is not sample-based). */
+/** Percent value shown for `metric` in a sample (`processes`: claude + its commands). */
 export function sampleValue(metric: MachineMetric, sample: MachineSample | null | undefined) {
   if (!sample) return null;
   switch (metric) {
@@ -82,16 +69,15 @@ export function sampleValue(metric: MachineMetric, sample: MachineSample | null 
       return sample.disk?.activePercent ?? null;
     case "gpu":
       return sample.gpu?.utilPercent ?? null;
-    default:
-      return null;
+    case "processes":
+      return sample.claudeCpu ?? null;
   }
 }
 
 /** Threshold level for a metric reading. GPU is judged on temperature, processes on CPU. */
 export function metricLevel(
   metric: MachineMetric,
-  sample: MachineSample | null | undefined,
-  claudeCpu: number | null = null
+  sample: MachineSample | null | undefined
 ): ThresholdLevel {
   switch (metric) {
     case "cpu":
@@ -103,7 +89,7 @@ export function metricLevel(
     case "gpu":
       return thresholdLevel("gpuTemp", sample?.gpu?.temperatureC);
     case "processes":
-      return thresholdLevel("cpu", claudeCpu);
+      return thresholdLevel("cpu", sample?.claudeCpu);
   }
 }
 

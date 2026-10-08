@@ -2302,13 +2302,14 @@ function createOpenApiSpec() {
                           },
                           claudeTreeCpuPercent: {
                             type: "number",
-                            description: "CPU % of every claude process plus all its descendants",
+                            description:
+                              "CPU % of every claude process plus all its descendants, averaged over the last 4 process snapshots (~20 s)",
                           },
                           cpuBySession: {
                             type: "object",
                             additionalProperties: { type: "number" },
                             description:
-                              "CPU % of each session's claude process plus its descendants, by session id (sessions whose hooks reported a claude_pid)",
+                              "CPU % of each session's claude process plus its descendants, by session id, averaged like claudeTreeCpuPercent",
                           },
                         },
                         additionalProperties: true,

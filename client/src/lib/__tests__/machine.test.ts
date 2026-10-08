@@ -14,10 +14,10 @@ import {
 } from "../machineThresholds";
 import {
   appendToWindow,
-  claudeCpuPercent,
   sessionCpuPercent,
   isClaudeProcess,
   metricLevel,
+  sampleValue,
   topProcesses,
 } from "../machine";
 import type { MachineProcess, MachineSample } from "../types";
@@ -82,23 +82,12 @@ describe("machine helpers", () => {
     expect(isClaudeProcess("claude-helper")).toBe(false);
   });
 
-  it("sums the CPU of claude processes", () => {
-    const items = [proc("claude", 2.5, 1, 1), proc("claude", 1.5, 1, 2), proc("node", 9, 1, 3)];
-    expect(claudeCpuPercent({ ts: 1, cores: 8, items })).toBe(4);
-    expect(claudeCpuPercent(null)).toBeNull();
-  });
-
   it("reads one session's CPU, null when the server has none", () => {
     const processes = { ts: 1, cores: 8, items: [], cpuBySession: { s1: 7.5 } };
     expect(sessionCpuPercent(processes, "s1")).toBe(7.5);
     expect(sessionCpuPercent(processes, "s2")).toBeNull();
     expect(sessionCpuPercent({ ts: 1, cores: 8, items: [] }, "s1")).toBeNull();
     expect(sessionCpuPercent(null, "s1")).toBeNull();
-  });
-
-  it("prefers the server's claude process-tree CPU when present", () => {
-    const items = [proc("claude", 0.2, 1, 1), proc("node", 9, 1, 3)];
-    expect(claudeCpuPercent({ ts: 1, cores: 8, items, claudeTreeCpuPercent: 12.4 })).toBe(12.4);
   });
 
   it("keeps the top 8 by CPU or by RAM", () => {
@@ -128,6 +117,7 @@ describe("machine helpers", () => {
   it("judges the GPU on temperature and processes on CPU thresholds", () => {
     const sample: MachineSample = {
       ts: 1,
+      claudeCpu: 72,
       cpu: { percent: 10, source: "cim" },
       ram: null,
       disk: null,
@@ -144,7 +134,8 @@ describe("machine helpers", () => {
     };
     expect(metricLevel("gpu", sample)).toBe("crit");
     expect(metricLevel("cpu", sample)).toBe("normal");
-    expect(metricLevel("processes", sample, 72)).toBe("warn");
+    expect(metricLevel("processes", sample)).toBe("warn");
+    expect(sampleValue("processes", sample)).toBe(72);
   });
 
   it("trims the rolling window and ignores stale samples", () => {

@@ -1,9 +1,9 @@
 /**
  * @file useSessionCpu.test.tsx
  * @description Tests the per-session CPU hook wiring: null until a `machine.sample`
- * carries a busy-enough reading for the session, smoothed over new process snapshots
- * only, ignores other sessions and message types, and resets on WebSocket disconnect
- * or when the session id changes. Smoothing rules themselves: `lib/sessionCpu`.
+ * carries a busy-enough reading for the session, then follows the server's (smoothed)
+ * value, ignores other sessions and message types, and resets on WebSocket disconnect
+ * or when the session id changes. Visibility rules themselves: `lib/sessionCpu`.
  */
 
 import { describe, it, expect, afterEach } from "vitest";
@@ -41,14 +41,14 @@ describe("useSessionCpu", () => {
     expect(result.current).toBeNull();
   });
 
-  it("shows the average of new snapshots, ignoring repeats of the same one", () => {
+  it("follows the server value once shown, until the session idles", () => {
     const { result } = renderHook(() => useSessionCpu("s1"));
-    act(() => eventBus.publish(sampleWith({ s1: 4 }, { ts: 100 })));
+    act(() => eventBus.publish(sampleWith({ s1: 4 })));
     expect(result.current).toBe(4);
-    act(() => eventBus.publish(sampleWith({ s1: 90 }, { ts: 100 }))); // same snapshot
-    expect(result.current).toBe(4);
-    act(() => eventBus.publish(sampleWith({ s1: 8 }, { ts: 101 })));
-    expect(result.current).toBe(6);
+    act(() => eventBus.publish(sampleWith({ s1: 1 }))); // between thresholds: kept
+    expect(result.current).toBe(1);
+    act(() => eventBus.publish(sampleWith({ s1: 0.2 })));
+    expect(result.current).toBeNull();
   });
 
   it("ignores other message types", () => {

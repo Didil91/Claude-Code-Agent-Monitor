@@ -366,6 +366,7 @@ describe("createMachineMetrics on Windows", () => {
     assert.equal(sample.volume.percent, 75);
     assert.equal(sample.gpu.utilPercent, 39);
     assert.equal(sample.gpu.temperatureC, 49);
+    assert.equal(sample.claudeCpu, 100);
 
     assert.equal(sent.length, 1);
     assert.equal(sent[0].type, "machine.sample");
@@ -404,6 +405,25 @@ describe("createMachineMetrics on Windows", () => {
     const procs = metrics.snapshot().processes;
     assert.ok(!procs.items.some((p) => p.pid === 44), "node child is outside the top list");
     assert.equal(procs.claudeTreeCpuPercent, 2); // 8 % of one core on 4 cores
+    metrics.stop();
+  });
+
+  it("smooths claude readings across process snapshots, total and per session", async () => {
+    const sessionRegistry = createSessionProcessRegistry();
+    const { spawn, metrics } = setup(undefined, { sessionRegistry });
+    sessionRegistry.record("session-a", 42);
+    metrics.start();
+    const ps = spawn.byCommand("pwsh")[0];
+    const snapshot = (cpu) =>
+      JSON.stringify({ type: "proc", items: [{ name: "claude", pid: 42, ppid: 7, cpu, mem: 1 }] });
+    ps.child.writeLine(snapshot(32)); // 8 % on 4 cores: a burst
+    ps.child.writeLine(snapshot(0)); // then a lull
+    await flush();
+
+    const procs = metrics.snapshot().processes;
+    assert.equal(procs.claudeTreeCpuPercent, 4);
+    assert.deepEqual(procs.cpuBySession, { "session-a": 4 });
+    assert.equal(metrics.tick().claudeCpu, 4);
     metrics.stop();
   });
 

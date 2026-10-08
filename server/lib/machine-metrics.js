@@ -14,6 +14,7 @@ const fs = require("fs");
 const childProcess = require("child_process");
 const { isClaudeProcessName, childrenByParent, subtreeCpuPercent } = require("./process-tree");
 const { createSessionProcessRegistry, sessionProcesses } = require("./session-processes");
+const { createCpuSmoother } = require("./cpu-smoothing");
 
 const SYS_INTERVAL_MS = 2_000;
 const PROC_INTERVAL_MS = 5_000;
@@ -456,7 +457,10 @@ function createMachineMetrics(options = {}) {
   };
 
   let latestSys = null; // { ts, cpuPercent, disk }
-  let latestProc = null; // { ts, items, claudeTreeCpuPercent, cpuBySession }
+  // claude readings are smoothed (~20 s) so the tile, its curve and the session
+  // tags all show the same value: { ts, items, claudeTreeCpuPercent, cpuBySession }
+  let latestProc = null;
+  const claudeCpuSmoother = createCpuSmoother();
   const gpus = new Map(); // index -> { ts, ...reading }
   let volume = null;
   let prevCpuTimes = null;
@@ -475,11 +479,15 @@ function createMachineMetrics(options = {}) {
     } else if (rec.type === "proc") {
       // Tree readings need the full list: the top-N cut breaks parent → child chains.
       const children = childrenByParent(rec.items);
+      const claude = claudeCpuSmoother.push({
+        total: claudeTreeCpuPercent(rec.items, children),
+        bySession: sessionRegistry.cpuBySession(rec.items, children),
+      });
       latestProc = {
         ts,
         items: selectTopProcesses(rec.items),
-        claudeTreeCpuPercent: claudeTreeCpuPercent(rec.items, children),
-        cpuBySession: sessionRegistry.cpuBySession(rec.items, children),
+        claudeTreeCpuPercent: claude.total,
+        cpuBySession: claude.bySession,
       };
     } else {
       status.sensorError = rec.message || null;
@@ -549,6 +557,7 @@ function createMachineMetrics(options = {}) {
     if (sys && sys.cpuPercent !== null) cpu = { percent: sys.cpuPercent, source: "cim" };
     else if (fallbackCpu !== null) cpu = { percent: fallbackCpu, source: "os" };
 
+    const proc = fresh(latestProc, procIntervalMs);
     const total = osModule.totalmem();
     const free = osModule.freemem();
     const used = Math.max(0, total - free);
@@ -564,6 +573,8 @@ function createMachineMetrics(options = {}) {
       disk: sys ? sys.disk : null,
       volume,
       gpu: currentGpu(),
+      // Smoothed "claude + its commands" CPU, kept in the window like the rest.
+      claudeCpu: proc ? proc.claudeTreeCpuPercent : null,
     };
     samples.push(sample);
     try {
@@ -620,6 +631,7 @@ function createMachineMetrics(options = {}) {
             status.retryInMs = extra.retryInMs ?? null;
             latestSys = null;
             latestProc = null;
+            claudeCpuSmoother.clear();
           }
         },
       });

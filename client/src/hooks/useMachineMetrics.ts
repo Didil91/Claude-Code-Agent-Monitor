@@ -2,20 +2,14 @@
  * @file useMachineMetrics.ts
  * @description React hook feeding the Machine mode: loads the 5-minute window
  * from `GET /api/machine`, then appends every `machine.sample` WebSocket message,
- * keeps the latest top-process snapshot and sensor status, and builds the
- * client-side history of the `claude` processes' CPU share (the server keeps no
- * process history, so that curve starts when the hook mounts).
+ * and keeps the latest top-process snapshot and sensor status. Every metric's history,
+ * claude + its commands included (`sample.claudeCpu`), comes from the server window.
  */
 
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { eventBus } from "../lib/eventBus";
-import {
-  appendToWindow,
-  claudeCpuPercent,
-  MACHINE_WINDOW_MS,
-  type SeriesPoint,
-} from "../lib/machine";
+import { appendToWindow, MACHINE_WINDOW_MS } from "../lib/machine";
 import type {
   MachineProcesses,
   MachineSample,
@@ -34,8 +28,6 @@ export interface MachineMetricsState {
   windowMs: number;
   samples: MachineSample[];
   processes: MachineProcesses | null;
-  /** Summed CPU % of `claude` processes, one point per process snapshot. */
-  claudeCpu: SeriesPoint[];
 }
 
 const INITIAL: MachineMetricsState = {
@@ -46,21 +38,7 @@ const INITIAL: MachineMetricsState = {
   windowMs: MACHINE_WINDOW_MS,
   samples: [],
   processes: null,
-  claudeCpu: [],
 };
-
-function withProcesses(
-  state: MachineMetricsState,
-  processes: MachineProcesses | null
-): MachineMetricsState {
-  if (!processes) return { ...state, processes: null };
-  const value = claudeCpuPercent(processes) ?? 0;
-  return {
-    ...state,
-    processes,
-    claudeCpu: appendToWindow(state.claudeCpu, { ts: processes.ts, value }, state.windowMs),
-  };
-}
 
 export function useMachineMetrics(): MachineMetricsState {
   const [state, setState] = useState<MachineMetricsState>(INITIAL);
@@ -85,7 +63,7 @@ export function useMachineMetrics(): MachineMetricsState {
             windowMs: snap.windowMs,
             samples,
           };
-          return prev.processes ? next : withProcesses(next, snap.processes);
+          return prev.processes ? next : { ...next, processes: snap.processes };
         });
       })
       .catch(() => {
@@ -105,8 +83,7 @@ export function useMachineMetrics(): MachineMetricsState {
           status: data.status ?? prev.status,
           samples: appendToWindow(prev.samples, data.sample, prev.windowMs),
         };
-        if (data.processes?.ts === prev.processes?.ts && data.processes) return next;
-        return withProcesses(next, data.processes ?? null);
+        return { ...next, processes: data.processes ?? null };
       });
     });
 

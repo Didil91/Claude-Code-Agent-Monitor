@@ -161,8 +161,11 @@ The server keeps an in-memory map `session_id → claude_pid`
 the Machine sensor sums, per session, the CPU of that claude process and all its
 descendants (`server/lib/process-tree.js`) and broadcasts it as
 `processes.cpuBySession` in `machine.sample`. Main agent cards show it live as a tag
-next to the status (`client/src/components/machine/SessionCpu.tsx`): a ~20 s moving
-average that appears above 1.5 % and hides below 0.5 % (`client/src/lib/sessionCpu.ts`). A link is dropped once its process is
+next to the status (`client/src/components/machine/SessionCpu.tsx`), shown above 1.5 % and
+hidden below 0.5 % (`client/src/lib/sessionCpu.ts`). The server smooths every claude
+reading — the machine-wide total, its 5-minute history (`sample.claudeCpu`) and each
+session — over the last 4 process snapshots (~20 s, `server/lib/cpu-smoothing.js`), so the
+Machine tile, its curve and the tags always show the same value. A link is dropped once its process is
 gone or its PID belongs to another program. The same links are also read every 30 s from
 Claude Code's own per-process files (`~/.claude/sessions/<pid>.json`, only `pid` and
 `sessionId` are used — `server/lib/claude-session-files.js`), so an idle session gets its

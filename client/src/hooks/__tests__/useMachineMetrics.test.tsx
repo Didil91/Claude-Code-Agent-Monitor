@@ -2,7 +2,7 @@
  * @file useMachineMetrics.test.tsx
  * @description Tests the Machine-mode data hook: it seeds from `GET /api/machine`,
  * appends live `machine.sample` WebSocket messages, ignores other message types,
- * records the claude CPU history once per process snapshot, and flags a failed load.
+ * keeps the latest process snapshot, and flags a failed load.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -51,7 +51,7 @@ describe("useMachineMetrics", () => {
     const { result } = renderHook(() => useMachineMetrics());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.samples.map((s) => s.ts)).toEqual([1000, 3000]);
-    expect(result.current.claudeCpu).toEqual([{ ts: 2000, value: 3 }]);
+    expect(result.current.processes?.ts).toBe(2000);
     expect(result.current.cores).toBe(8);
 
     act(() => {
@@ -61,8 +61,6 @@ describe("useMachineMetrics", () => {
       eventBus.publish(message({ id: "x" }, "session_updated"));
     });
     expect(result.current.samples.map((s) => s.ts)).toEqual([1000, 3000, 5000]);
-    // Same process snapshot: no duplicate history point.
-    expect(result.current.claudeCpu).toHaveLength(1);
 
     act(() => {
       eventBus.publish(
@@ -80,10 +78,7 @@ describe("useMachineMetrics", () => {
         })
       );
     });
-    expect(result.current.claudeCpu).toEqual([
-      { ts: 2000, value: 3 },
-      { ts: 7000, value: 3.5 },
-    ]);
+    expect(result.current.processes?.ts).toBe(7000);
   });
 
   it("flags a failed load", async () => {

@@ -1824,6 +1824,8 @@ export interface MachineSample {
     temperatureC: number | null;
     lowPower: boolean;
   } | null;
+  /** CPU % of claude + its commands, smoothed over ~20 s by the server. */
+  claudeCpu?: number | null;
 }
 
 /** One entry of the top-process snapshot. `cpuPercent` is a share of the
