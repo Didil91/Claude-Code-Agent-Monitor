@@ -225,6 +225,33 @@ function selectTopProcesses(items, limit = PROCESS_LIMIT) {
   );
 }
 
+/**
+ * Whole-machine CPU share of every `claude` process plus all its descendants (the shells,
+ * node, git, test runners it spawns). Must run on the full process list: the top-N cut
+ * would drop light children and break parent → child chains. Each process counts once,
+ * even under nested claudes or parent loops. A recycled PID can in theory adopt an
+ * orphan into the tree; perf counters carry no creation time to rule that out.
+ */
+function claudeTreeCpuPercent(items) {
+  const children = new Map();
+  for (const p of items) {
+    if (p.parentPid === null || p.parentPid === p.pid) continue;
+    if (!children.has(p.parentPid)) children.set(p.parentPid, []);
+    children.get(p.parentPid).push(p);
+  }
+  const visited = new Set();
+  const stack = items.filter((p) => /^claude(\.exe)?$/i.test(p.name));
+  let total = 0;
+  while (stack.length) {
+    const p = stack.pop();
+    if (visited.has(p.pid)) continue;
+    visited.add(p.pid);
+    total += Number.isFinite(p.cpuPercent) ? p.cpuPercent : 0;
+    for (const child of children.get(p.pid) || []) stack.push(child);
+  }
+  return round1(Math.min(100, total));
+}
+
 // ── PowerShell sensor script ────────────────────────────────────────────────
 
 /**
@@ -443,7 +470,7 @@ function createMachineMetrics(options = {}) {
   };
 
   let latestSys = null; // { ts, cpuPercent, disk }
-  let latestProc = null; // { ts, items }
+  let latestProc = null; // { ts, items, claudeTreeCpuPercent }
   const gpus = new Map(); // index -> { ts, ...reading }
   let volume = null;
   let prevCpuTimes = null;
@@ -460,7 +487,11 @@ function createMachineMetrics(options = {}) {
     if (rec.type === "sys") {
       latestSys = { ts, cpuPercent: rec.cpuPercent, disk: rec.disk };
     } else if (rec.type === "proc") {
-      latestProc = { ts, items: selectTopProcesses(rec.items) };
+      latestProc = {
+        ts,
+        items: selectTopProcesses(rec.items),
+        claudeTreeCpuPercent: claudeTreeCpuPercent(rec.items),
+      };
     } else {
       status.sensorError = rec.message || null;
       return false;
@@ -556,7 +587,9 @@ function createMachineMetrics(options = {}) {
 
   function getProcesses() {
     const p = fresh(latestProc, procIntervalMs);
-    return p ? { ts: p.ts, cores, items: p.items } : null;
+    return p
+      ? { ts: p.ts, cores, items: p.items, claudeTreeCpuPercent: p.claudeTreeCpuPercent }
+      : null;
   }
 
   function getStatus() {
@@ -727,6 +760,7 @@ module.exports = {
   backoffDelay,
   createRollingWindow,
   selectTopProcesses,
+  claudeTreeCpuPercent,
   buildSensorScript,
   encodePowerShell,
   superviseProcess,

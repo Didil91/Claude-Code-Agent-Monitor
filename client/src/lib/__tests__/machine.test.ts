@@ -87,6 +87,11 @@ describe("machine helpers", () => {
     expect(claudeCpuPercent(null)).toBeNull();
   });
 
+  it("prefers the server's claude process-tree CPU when present", () => {
+    const items = [proc("claude", 0.2, 1, 1), proc("node", 9, 1, 3)];
+    expect(claudeCpuPercent({ ts: 1, cores: 8, items, claudeTreeCpuPercent: 12.4 })).toBe(12.4);
+  });
+
   it("keeps the top 8 by CPU or by RAM", () => {
     const items = Array.from({ length: 12 }, (_, i) => proc(`p${i}`, i, (12 - i) * 1000, i));
     expect(topProcesses(items, "cpu").map((p) => p.name)).toEqual([

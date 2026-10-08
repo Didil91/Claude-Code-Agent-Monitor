@@ -33,9 +33,9 @@
       "processes": "进程"
     },
     "metricsLabel": "本机指标",
-    "claudeCpuCaption": "claude CPU",
+    "claudeCpuCaption": "claude 及其命令",
     "chartTitle": "{{metric}} — 最近 5 分钟",
-    "chartTitleProcesses": "claude 进程的 CPU — 最近 5 分钟",
+    "chartTitleProcesses": "claude 及其命令的 CPU — 最近 5 分钟",
     "chartLabel": "最近 5 分钟的{{metric}}",
     "temperature": "温度",
     "load": "负载",

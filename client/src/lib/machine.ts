@@ -32,9 +32,14 @@ export function isClaudeProcess(name: string): boolean {
   return /^claude(\.exe)?$/i.test(name.trim());
 }
 
-/** Summed whole-machine CPU share of every `claude` process. */
+/**
+ * Whole-machine CPU share of the `claude` processes and everything they spawn, as
+ * computed by the server; falls back to the `claude` processes alone (older server).
+ */
 export function claudeCpuPercent(processes: MachineProcesses | null): number | null {
   if (!processes) return null;
+  const tree = processes.claudeTreeCpuPercent;
+  if (typeof tree === "number" && Number.isFinite(tree)) return tree;
   return processes.items
     .filter((p) => isClaudeProcess(p.name))
     .reduce((sum, p) => sum + (Number.isFinite(p.cpuPercent) ? p.cpuPercent : 0), 0);

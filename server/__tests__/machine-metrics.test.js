@@ -281,6 +281,43 @@ describe("cpuPercentFromTimes / backoffDelay / selectTopProcesses", () => {
   });
 });
 
+describe("claudeTreeCpuPercent", () => {
+  const p = (pid, parentPid, name, cpuPercent) => ({
+    pid,
+    parentPid,
+    name,
+    cpuPercent,
+    memoryBytes: 1,
+  });
+
+  it("sums claude and every descendant, through intermediate shells", () => {
+    const items = [
+      p(10, 1, "claude", 0.5),
+      p(11, 10, "cmd", 0),
+      p(12, 11, "node", 20),
+      p(13, 12, "node", 5.3),
+      p(20, 1, "node", 90), // unrelated
+    ];
+    assert.equal(mm.claudeTreeCpuPercent(items), 25.8);
+  });
+
+  it("counts a claude nested under another claude once", () => {
+    const items = [p(10, 1, "claude", 1), p(11, 10, "claude", 2), p(12, 11, "git", 3)];
+    assert.equal(mm.claudeTreeCpuPercent(items), 6);
+  });
+
+  it("survives parent loops and ignores processes outside the tree", () => {
+    const items = [p(10, 12, "claude", 1), p(11, 10, "node", 2), p(12, 11, "node", 3)];
+    assert.equal(mm.claudeTreeCpuPercent(items), 6);
+    assert.equal(mm.claudeTreeCpuPercent([p(5, 4, "node", 50)]), 0);
+    assert.equal(mm.claudeTreeCpuPercent([]), 0);
+  });
+
+  it("does not count a process as its own child", () => {
+    assert.equal(mm.claudeTreeCpuPercent([p(10, 10, "claude", 4)]), 4);
+  });
+});
+
 // ── Supervisor and orchestrator ─────────────────────────────────────────────
 
 describe("createMachineMetrics on Windows", () => {
@@ -333,11 +370,38 @@ describe("createMachineMetrics on Windows", () => {
     assert.deepEqual(sent[0].data.processes.items, [
       { name: "claude", pid: 42, parentPid: 7, cpuPercent: 100, memoryBytes: 1048576 },
     ]);
+    assert.equal(sent[0].data.processes.claudeTreeCpuPercent, 100);
 
     const snap = metrics.snapshot();
     assert.equal(snap.status.sensor, "ok");
     assert.equal(snap.status.gpu, "ok");
     assert.equal(snap.samples.length, 1);
+    metrics.stop();
+  });
+
+  it("counts claude descendants that fall outside the top processes", async () => {
+    const { spawn, metrics } = setup();
+    metrics.start();
+    const ps = spawn.byCommand("pwsh")[0];
+    // Heavy unrelated processes fill the top list; the claude chain stays light.
+    const heavy = Array.from({ length: mm.PROCESS_LIMIT + 5 }, (_, i) => ({
+      name: "busy",
+      pid: 1000 + i,
+      ppid: 1,
+      cpu: 40,
+      mem: 1e9,
+    }));
+    const chain = [
+      { name: "claude", pid: 42, ppid: 7, cpu: 0, mem: 10 },
+      { name: "cmd", pid: 43, ppid: 42, cpu: 0, mem: 1 },
+      { name: "node", pid: 44, ppid: 43, cpu: 8, mem: 1 },
+    ];
+    ps.child.writeLine(JSON.stringify({ type: "proc", items: [...heavy, ...chain] }));
+    await flush();
+
+    const procs = metrics.snapshot().processes;
+    assert.ok(!procs.items.some((p) => p.pid === 44), "node child is outside the top list");
+    assert.equal(procs.claudeTreeCpuPercent, 2); // 8 % of one core on 4 cores
     metrics.stop();
   });
 

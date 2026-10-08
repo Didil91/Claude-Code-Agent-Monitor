@@ -1841,6 +1841,8 @@ export interface MachineProcesses {
   ts: number;
   cores: number;
   items: MachineProcess[];
+  /** CPU % of `claude` processes plus every descendant, over the full process list. */
+  claudeTreeCpuPercent?: number;
 }
 
 /** Sensor health as reported by the server. */

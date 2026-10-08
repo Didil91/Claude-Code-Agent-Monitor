@@ -33,9 +33,9 @@
       "processes": "프로세스"
     },
     "metricsLabel": "머신 지표",
-    "claudeCpuCaption": "claude CPU",
+    "claudeCpuCaption": "claude + 실행한 명령",
     "chartTitle": "{{metric}} — 최근 5분",
-    "chartTitleProcesses": "claude 프로세스 CPU — 최근 5분",
+    "chartTitleProcesses": "claude 및 실행한 명령의 CPU — 최근 5분",
     "chartLabel": "최근 5분간 {{metric}}",
     "temperature": "온도",
     "load": "부하",

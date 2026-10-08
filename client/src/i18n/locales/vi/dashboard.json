@@ -33,9 +33,9 @@
       "processes": "Tiến trình"
     },
     "metricsLabel": "Chỉ số máy",
-    "claudeCpuCaption": "CPU của claude",
+    "claudeCpuCaption": "claude + các lệnh của nó",
     "chartTitle": "{{metric}} — 5 phút gần nhất",
-    "chartTitleProcesses": "CPU của các tiến trình claude — 5 phút gần nhất",
+    "chartTitleProcesses": "CPU của claude và các lệnh của nó — 5 phút gần nhất",
     "chartLabel": "{{metric}} trong 5 phút gần nhất",
     "temperature": "Nhiệt độ",
     "load": "Tải",

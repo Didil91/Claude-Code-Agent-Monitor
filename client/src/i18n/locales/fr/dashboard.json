@@ -33,9 +33,9 @@
       "processes": "Processus"
     },
     "metricsLabel": "Métriques de la machine",
-    "claudeCpuCaption": "CPU de claude",
+    "claudeCpuCaption": "claude + ses commandes",
     "chartTitle": "{{metric}} — 5 dernières minutes",
-    "chartTitleProcesses": "CPU des processus claude — 5 dernières minutes",
+    "chartTitleProcesses": "CPU de claude et de ses commandes — 5 dernières minutes",
     "chartLabel": "{{metric}} sur les 5 dernières minutes",
     "temperature": "Température",
     "load": "Charge",
