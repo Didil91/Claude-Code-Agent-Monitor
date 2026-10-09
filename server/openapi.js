@@ -464,6 +464,12 @@ function createOpenApiSpec() {
               description:
                 "Why this agent is awaiting input: 'notification' (Claude asked the user something), 'stop' (turn completed, waiting for the next prompt), 'session_start' (new/resumed session waiting for the first prompt), or 'interrupted' (watchdog/Esc recovery). Null when not waiting; cleared alongside awaiting_input_since.",
             },
+            claude_agent_id: {
+              type: "string",
+              nullable: true,
+              description:
+                "Claude Code's own id for a hook-created subagent (the agentId of the Agent tool response, matching its agent-<id>.jsonl transcript). SubagentStop resolves the stopped subagent by it. Null for main agents and rows that were never bound.",
+            },
           },
         },
         DashboardEvent: {

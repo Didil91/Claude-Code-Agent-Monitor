@@ -271,6 +271,7 @@ CREATE TABLE agents (
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
     awaiting_input_since TEXT,                                        -- main-agent waiting flag
     awaiting_reason TEXT,                                             -- notification|stop|session_start|interrupted, or NULL
+    claude_agent_id TEXT,                                             -- Claude Code's subagent id, or NULL
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_agent_id) REFERENCES agents(id) ON DELETE SET NULL
 );
@@ -292,6 +293,7 @@ CREATE TABLE agents (
 | `metadata` | TEXT | YES | JSON blob for extras. For subagents it carries `model` (the subagent's own model, issue #185) and `tokens` — an array of per-agent token buckets parsed from the subagent's transcript. The agent-list endpoints price `tokens` at the current rates to attach a per-agent `cost` (so a subagent card shows its OWN cost, not the session total). Empty `[]` means the subagent did no billable work; absent means its transcript wasn't available to parse |
 | `awaiting_input_since` | TEXT | YES | Mirrors the parent session's flag for the main agent, including Codex `task_complete` / `turn_aborted` waiting state. NULL on subagents |
 | `awaiting_reason` | TEXT | YES | Why the row is waiting: `notification`, `stop`, `session_start`, or `interrupted`. Set/cleared in lock-step with `awaiting_input_since`; for Codex, `task_complete` uses `stop` and `turn_aborted` uses `interrupted`. NULL on subagents |
+| `claude_agent_id` | TEXT | YES | Claude Code's own id for a hook-created subagent (e.g. `a4b3dc35650158377`, the `agent-<id>.jsonl` transcript name). Bound once from the Agent tool's `PostToolUse` response (`tool_response.agentId`) and never overwritten; `SubagentStop` resolves the stopped subagent by it, and `findLiveSubagentForJsonl` merges the subagent transcript into that exact row. Added by an additive migration (index `idx_agents_session_claude_id`). NULL for main agents, compaction / JSONL-imported rows, and subagents spawned before the column existed |
 
 **Lifecycle:**
 

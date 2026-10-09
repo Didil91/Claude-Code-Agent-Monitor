@@ -497,11 +497,14 @@ curl http://localhost:4820/api/sessions/sess_abc123/agents
       "parent_agent_id": null,
       "awaiting_input_since": "2024-03-18T12:05:00Z",
       "awaiting_reason": "stop",
+      "claude_agent_id": null,
       "cost": 0
     }
   ]
 }
 ```
+
+> **Note on `claude_agent_id`** — for a subagent spawned by the Agent tool, Claude Code's own id for it (e.g. `a4b3dc35650158377`, the `agent-<id>.jsonl` transcript name), bound from the Agent `PostToolUse` response. `SubagentStop` uses it to close exactly the subagent that stopped. `null` for main agents and rows never bound.
 
 > **Note on `cost`** — `/api/agents` and `/api/sessions/:id/agents` attach a `cost` (USD) to each agent: the agent's **own** cost, computed server-side from the per-agent token buckets stored in `agents.metadata.tokens` and priced at the current pricing rules (at the agent's start date, so promo/standard cutovers apply — see [Pricing](#pricing)). It is `0` for main agents (whose cost is the session total, reported by `/api/pricing/cost/:sessionId`), for compaction pseudo-agents, and for any subagent whose transcript is unavailable. This lets a subagent card show only what that subagent spent instead of the whole session's total.
 

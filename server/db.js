@@ -1364,6 +1364,21 @@ try {
   }
 }
 
+// Migrate: add `claude_agent_id` to agents. Claude Code's own id for a spawned
+// subagent (the `agentId` in the Agent tool's PostToolUse response, and the
+// `agent_id` on SubagentStop). Rows keep their dashboard UUID as primary key;
+// this column lets SubagentStop close exactly the subagent that stopped instead
+// of guessing. Runs after the legacy table rebuild above, which lists columns
+// explicitly and would otherwise drop it.
+try {
+  db.prepare("SELECT claude_agent_id FROM agents LIMIT 1").get();
+} catch {
+  db.prepare("ALTER TABLE agents ADD COLUMN claude_agent_id TEXT").run();
+}
+db.prepare(
+  "CREATE INDEX IF NOT EXISTS idx_agents_session_claude_id ON agents(session_id, claude_agent_id)"
+).run();
+
 // Migrate: add compaction baseline columns to token_usage.
 // When conversation compaction rewrites the JSONL, pre-compaction token counts
 // are lost from the transcript. Baselines preserve those counts so the effective
@@ -1792,6 +1807,20 @@ const stmts = {
   // parent comes from the spawner transcript's Task tool_result (agentId).
   setAgentParent: db.prepare(
     "UPDATE agents SET parent_agent_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?"
+  ),
+  // Claude Code's own subagent id (agents.claude_agent_id). Bound once — from the
+  // Agent tool's PostToolUse response or the first SubagentStop that matches the
+  // row — and never overwritten, so SubagentStop can resolve the exact row.
+  getSubagentByClaudeId: db.prepare(
+    "SELECT * FROM agents WHERE session_id = ? AND type = 'subagent' AND claude_agent_id = ? LIMIT 1"
+  ),
+  setAgentClaudeId: db.prepare(
+    "UPDATE agents SET claude_agent_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND claude_agent_id IS NULL"
+  ),
+  // The Agent-spawn PreToolUse event is stored under the new subagent row's id,
+  // so its tool_use_id leads the matching PostToolUse back to that row.
+  findAgentSpawnByToolUseId: db.prepare(
+    "SELECT agent_id FROM events WHERE session_id = ? AND event_type = 'PreToolUse' AND tool_name = 'Agent' AND data LIKE ? ORDER BY id DESC LIMIT 1"
   ),
   // Awaiting-input state. Stamping awaiting_input_since marks the row as
   // "waiting" for user attention without touching the underlying status

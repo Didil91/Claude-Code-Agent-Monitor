@@ -213,6 +213,36 @@ function subagentIsActorNow(sessionId, mainAgent) {
   return !!stmts.findDeepestWorkingAgent.get(sessionId, sessionId);
 }
 
+// Claude Code's own id for a subagent spawned by the Agent tool, read from the
+// PostToolUse tool_response. Current Claude Code returns an object carrying
+// `agentId` (`{status: "async_launched", agentId, ...}` for background agents,
+// `{status: "completed", agentId, content}` for synchronous ones); older
+// versions returned text blocks containing an `agentId: <id>` line.
+function claudeAgentIdFromToolResponse(resp) {
+  if (!resp) return null;
+  if (typeof resp === "object" && !Array.isArray(resp) && typeof resp.agentId === "string") {
+    return resp.agentId || null;
+  }
+  const blocks = Array.isArray(resp) ? resp : Array.isArray(resp.content) ? resp.content : null;
+  const text =
+    typeof resp === "string"
+      ? resp
+      : blocks
+        ? blocks.map((b) => (b && typeof b.text === "string" ? b.text : "")).join("\n")
+        : "";
+  const m = /\bagentId:\s*([A-Za-z0-9_-]+)/.exec(text);
+  return m ? m[1] : null;
+}
+
+// The stopped subagent's Claude Code id: `agent_id`, else the id embedded in
+// `agent_transcript_path` (`.../subagents/agent-<id>.jsonl`).
+function claudeAgentIdFromSubagentStop(data) {
+  if (typeof data.agent_id === "string" && data.agent_id) return data.agent_id;
+  const p = data.agent_transcript_path;
+  const m = typeof p === "string" ? /agent-([A-Za-z0-9_-]+)\.jsonl$/.exec(p) : null;
+  return m ? m[1] : null;
+}
+
 // Land a session that was cancelled with no hook (Esc) in the same
 // waiting + awaiting-input state a normal Stop produces, and log a timeline
 // event. Used by both watchdog recovery paths: the transcript-marker path
@@ -673,6 +703,37 @@ const processEvent = db.transaction((hookType, data, origin = null) => {
       // NOTE: PostToolUse for "Agent" tool fires immediately when a subagent is
       // backgrounded — it does NOT mean the subagent finished its work.
       // Subagent completion is handled by SubagentStop, not here.
+      //
+      // It does carry Claude Code's id for the subagent, though. Bind it to the
+      // row PreToolUse created (found through the spawn event's tool_use_id) so
+      // SubagentStop can close exactly that subagent later. A synchronous agent
+      // has already stopped by now; binding never touches its status.
+      if (toolName === "Agent") {
+        const claudeAgentId = claudeAgentIdFromToolResponse(data.tool_response);
+        if (claudeAgentId && !stmts.getSubagentByClaudeId.get(sessionId, claudeAgentId)) {
+          let sub = null;
+          if (typeof data.tool_use_id === "string" && data.tool_use_id) {
+            const spawn = stmts.findAgentSpawnByToolUseId.get(
+              sessionId,
+              `%"tool_use_id":${JSON.stringify(data.tool_use_id)}%`
+            );
+            if (spawn?.agent_id) sub = stmts.getAgent.get(spawn.agent_id);
+          }
+          if (!sub) {
+            // No tool_use_id link: fall back to the unbound subagent with this prompt.
+            const prompt = data.tool_input?.prompt ? data.tool_input.prompt.slice(0, 500) : null;
+            if (prompt) {
+              sub = stmts.listAgentsBySession
+                .all(sessionId)
+                .find((a) => a.type === "subagent" && !a.claude_agent_id && a.task === prompt);
+            }
+          }
+          if (sub && sub.type === "subagent" && !sub.claude_agent_id) {
+            stmts.setAgentClaudeId.run(claudeAgentId, sub.id);
+            broadcast("agent_updated", stmts.getAgent.get(sub.id));
+          }
+        }
+      }
 
       // Attribute to the working subagent when main is waiting (same heuristic as PreToolUse).
       if (mainAgent && mainAgent.status === "waiting" && toolName !== "Agent") {
@@ -742,55 +803,72 @@ const processEvent = db.transaction((hookType, data, origin = null) => {
 
     case "SubagentStop": {
       summary = `Subagent completed`;
-      const subagents = stmts.listAgentsBySession.all(sessionId);
       let matchingSub = null;
 
-      // Try to identify which subagent stopped using available data.
-      // SubagentStop provides: agent_type (e.g. "Explore", "test-engineer"),
-      // agent_id (Claude's internal ID), description, last_assistant_message.
+      // 1. Exact match on Claude Code's id (agent_id, or the id in
+      //    agent_transcript_path), bound to the row by the Agent PostToolUse.
+      const claudeAgentId = claudeAgentIdFromSubagentStop(data);
+      if (claudeAgentId) {
+        matchingSub = stmts.getSubagentByClaudeId.get(sessionId, claudeAgentId) || null;
+      }
+
+      // 2. Heuristics, for rows not bound yet (a synchronous subagent stops
+      //    before its PostToolUse arrives; payloads from older Claude Code).
+      //    Claude Code also fires SubagentStop for its own internal helper
+      //    agents: unknown agent_id, empty agent_type, no description/prompt.
+      //    Those carry no hint at all and must not close anything — they are
+      //    only recorded as events. Only a payload with no id at all (legacy)
+      //    keeps the "any working subagent" fallback.
       const subDesc = data.description || data.agent_type || data.subagent_type || null;
-      if (subDesc) {
-        const namePrefix = subDesc.length > 57 ? subDesc.slice(0, 57) : subDesc;
-        matchingSub = subagents.find(
-          (a) => a.type === "subagent" && a.status === "working" && a.name.startsWith(namePrefix)
-        );
-      }
+      const hasHint = !!(subDesc || data.prompt);
+      if (!matchingSub && (hasHint || !claudeAgentId)) {
+        const working = stmts.listAgentsBySession
+          .all(sessionId)
+          .filter((a) => a.type === "subagent" && a.status === "working");
+        // Rows already bound to another Claude id are a different subagent.
+        const unbound = working.filter((a) => !a.claude_agent_id);
+        const candidates = claudeAgentId || unbound.length > 0 ? unbound : working;
 
-      // Try matching by agent_type against stored subagent_type
-      if (!matchingSub && data.agent_type) {
-        matchingSub = subagents.find(
-          (a) =>
-            a.type === "subagent" && a.status === "working" && a.subagent_type === data.agent_type
-        );
-      }
+        if (subDesc) {
+          const namePrefix = subDesc.length > 57 ? subDesc.slice(0, 57) : subDesc;
+          matchingSub = candidates.find((a) => a.name.startsWith(namePrefix));
+        }
 
-      if (!matchingSub) {
-        const prompt = data.prompt ? data.prompt.slice(0, 500) : null;
-        if (prompt) {
-          matchingSub = subagents.find(
-            (a) => a.type === "subagent" && a.status === "working" && a.task === prompt
-          );
+        // Try matching by agent_type against stored subagent_type
+        if (!matchingSub && data.agent_type) {
+          matchingSub = candidates.find((a) => a.subagent_type === data.agent_type);
+        }
+
+        if (!matchingSub) {
+          const prompt = data.prompt ? data.prompt.slice(0, 500) : null;
+          if (prompt) {
+            matchingSub = candidates.find((a) => a.task === prompt);
+          }
+        }
+
+        // Legacy fallback: any working subagent (payload carries no id at all)
+        if (!matchingSub && !claudeAgentId) {
+          matchingSub = candidates[0];
         }
       }
 
-      // Fallback: oldest working subagent
-      if (!matchingSub) {
-        matchingSub = subagents.find((a) => a.type === "subagent" && a.status === "working");
-      }
-
       if (matchingSub) {
-        stmts.updateAgent.run(
-          null,
-          "completed",
-          null,
-          null,
-          new Date().toISOString(),
-          null,
-          matchingSub.id
-        );
-        broadcast("agent_updated", stmts.getAgent.get(matchingSub.id));
         agentId = matchingSub.id;
         summary = `Subagent completed: ${matchingSub.name}`;
+        // A repeated SubagentStop for an already-closed subagent keeps its
+        // original ended_at.
+        if (matchingSub.status !== "completed" && matchingSub.status !== "error") {
+          stmts.updateAgent.run(
+            null,
+            "completed",
+            null,
+            null,
+            new Date().toISOString(),
+            null,
+            matchingSub.id
+          );
+          broadcast("agent_updated", stmts.getAgent.get(matchingSub.id));
+        }
 
         // Session stays active — SubagentStop just means one subagent finished,
         // the session is not over until the user explicitly closes it.

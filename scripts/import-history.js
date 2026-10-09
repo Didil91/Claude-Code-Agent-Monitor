@@ -767,11 +767,22 @@ function truncateForEvent(value) {
  * matches a JSONL transcript. Used to merge JSONL-extracted tool events into
  * the live subagent row instead of creating a duplicate row.
  *
- * Match heuristic: same session, same agentType, started within START_TOLERANCE_MS
- * of the JSONL's first timestamp, not already a JSONL-keyed row.
+ * Exact match first: a live row whose claude_agent_id (bound from the Agent
+ * PostToolUse response) equals the JSONL's agent id. Otherwise the heuristic:
+ * same session, same agentType, started within START_TOLERANCE_MS of the
+ * JSONL's first timestamp, not already a JSONL-keyed row, and not bound to a
+ * different Claude agent id.
  */
 const SUBAGENT_LIVE_MATCH_TOLERANCE_MS = 30_000;
 function findLiveSubagentForJsonl(dbModule, sessionId, subData) {
+  if (subData.agentId) {
+    const exact = dbModule.db
+      .prepare(
+        "SELECT id FROM agents WHERE session_id = ? AND type = 'subagent' AND claude_agent_id = ? LIMIT 1"
+      )
+      .get(sessionId, subData.agentId);
+    if (exact) return exact;
+  }
   if (!subData.agentType || !subData.startedAt) return null;
   return dbModule.db
     .prepare(
@@ -780,6 +791,7 @@ function findLiveSubagentForJsonl(dbModule, sessionId, subData) {
          AND type = 'subagent'
          AND subagent_type = ?
          AND id NOT LIKE ?
+         AND claude_agent_id IS NULL
          AND ABS(CAST(strftime('%s', started_at) AS INTEGER) -
                  CAST(strftime('%s', ?) AS INTEGER)) <= ?
        ORDER BY ABS(CAST(strftime('%s', started_at) AS INTEGER) -
