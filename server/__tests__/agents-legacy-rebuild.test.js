@@ -78,6 +78,10 @@ before(() => {
 });
 
 after(() => {
+  // Close the DB db.js opened — Windows can't unlink an open file.
+  try {
+    require.cache[require.resolve("../db")]?.exports.db.close();
+  } catch {}
   try {
     delete require.cache[require.resolve("../db")];
   } catch {}

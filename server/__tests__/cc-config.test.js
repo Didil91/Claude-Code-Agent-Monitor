@@ -237,7 +237,9 @@ describe("/api/cc-config", () => {
     // the OS releasing directory handles) is still held. maxRetries covers
     // transient locks; the try/catch makes the rest best-effort — a leftover
     // temp dir must not fail the suite (the OS reclaims os.tmpdir()).
+    // The dashboard DB lives under TMP too — close it before removing the dir.
     try {
+      require("../db").db.close();
       fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     } catch {
       /* best-effort temp cleanup */

@@ -21,6 +21,7 @@
 const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
+const fs = require("fs");
 const os = require("os");
 const http = require("http");
 
@@ -104,8 +105,17 @@ before(async () => {
   BASE = `http://127.0.0.1:${server.address().port}`;
 });
 
-after(() => {
-  if (server) server.close();
+after(async () => {
+  if (server) await new Promise((r) => server.close(r));
+  // Close the DB before removing it — Windows can't unlink an open file.
+  try {
+    require("../db").db.close();
+    for (const suffix of ["", "-wal", "-shm"]) {
+      fs.rmSync(TEST_DB + suffix, { force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  } catch {
+    /* best-effort temp cleanup */
+  }
 });
 
 describe("awaiting guard: subagent tool events vs. main-agent waiting", () => {

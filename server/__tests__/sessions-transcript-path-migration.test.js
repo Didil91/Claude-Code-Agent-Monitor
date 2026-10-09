@@ -18,7 +18,20 @@ before(() => {
   process.env.DASHBOARD_DB_PATH = TEST_DB;
 });
 
+// Each test re-requires db.js for a fresh migration pass; close the previous
+// connection first so no handle keeps the temp DB open (Windows can't unlink
+// an open file).
+function reloadDb() {
+  try {
+    require.cache[require.resolve("../db")]?.exports.db.close();
+  } catch {}
+  delete require.cache[require.resolve("../db")];
+}
+
 after(() => {
+  try {
+    require.cache[require.resolve("../db")]?.exports.db.close();
+  } catch {}
   try {
     fs.unlinkSync(TEST_DB);
   } catch {}
@@ -32,7 +45,7 @@ after(() => {
 
 describe("sessions.transcript_path migration", () => {
   it("adds transcript_path column on first load", () => {
-    delete require.cache[require.resolve("../db")];
+    reloadDb();
     const { db } = require("../db");
     const cols = db.prepare("PRAGMA table_info(sessions)").all();
     const names = cols.map((c) => c.name);
@@ -43,7 +56,7 @@ describe("sessions.transcript_path migration", () => {
   });
 
   it("is idempotent — loading db.js a second time does not throw", () => {
-    delete require.cache[require.resolve("../db")];
+    reloadDb();
     assert.doesNotThrow(() => require("../db"));
   });
 
@@ -61,7 +74,7 @@ describe("sessions.transcript_path migration", () => {
 
 describe("hooks ingestion populates sessions.transcript_path", () => {
   it("sets transcript_path on first event that carries it", async () => {
-    delete require.cache[require.resolve("../db")];
+    reloadDb();
     const { db, stmts } = require("../db");
 
     // Pre-create a session without transcript_path (simulate legacy state)

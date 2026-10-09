@@ -91,11 +91,11 @@ describe("/api/run", () => {
   after(async () => {
     await new Promise((r) => server.close(r));
     // The SQLite DB lives under TMP and better-sqlite3 holds it open, so on
-    // Windows rmSync hits EPERM (can't remove a dir with an open handle).
-    // maxRetries covers transient locks; the try/catch makes the rest
-    // best-effort — a leftover temp dir must not fail the suite (the OS
-    // reclaims os.tmpdir()).
+    // Windows rmSync hits EPERM (can't remove a dir with an open handle) —
+    // close it first. maxRetries covers transient locks; the try/catch keeps
+    // cleanup best-effort so a leftover temp dir never fails the suite.
     try {
+      require("../db").db.close();
       fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     } catch {
       /* best-effort temp cleanup */

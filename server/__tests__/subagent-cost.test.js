@@ -45,6 +45,13 @@ after(() => {
       /* ignore */
     }
   }
+  if (tmpDir) {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    } catch {
+      /* ignore */
+    }
+  }
 });
 
 function writeJsonl(filePath, lines) {

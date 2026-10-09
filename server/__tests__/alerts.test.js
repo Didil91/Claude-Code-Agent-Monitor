@@ -9,6 +9,7 @@
 const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
+const fs = require("fs");
 const os = require("os");
 const http = require("http");
 
@@ -77,12 +78,19 @@ before(async () => {
   BASE = `http://127.0.0.1:${addr.port}`;
 });
 
-after(() => {
-  server?.close();
+after(async () => {
+  if (server) await new Promise((r) => server.close(r));
   try {
     db.close();
   } catch {
     /* already closed */
+  }
+  try {
+    for (const suffix of ["", "-wal", "-shm"]) {
+      fs.rmSync(TEST_DB + suffix, { force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  } catch {
+    /* best-effort temp cleanup */
   }
 });
 

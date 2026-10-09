@@ -244,15 +244,17 @@ describe("deployment validator exit policy", () => {
   });
 
   it("writes an advisory markdown table to the GitHub step summary", () => {
-    const summary = path.join(
-      fs.mkdtempSync(path.join(os.tmpdir(), "ccam-summary-")),
-      "summary.md"
-    );
-    const result = runFinish({ GITHUB_STEP_SUMMARY: summary, GITHUB_ACTIONS: "true" });
-    assert.equal(result.status, 0, result.stderr);
-    const written = fs.readFileSync(summary, "utf8");
-    assert.match(written, /advisory finding\(s\)/);
-    assert.match(written, /\| ⚠️ \| example check \| example detail \|/);
-    assert.match(written, /CCAM_DEPLOY_VALIDATE_STRICT=1/);
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ccam-summary-"));
+    const summary = path.join(tmp, "summary.md");
+    try {
+      const result = runFinish({ GITHUB_STEP_SUMMARY: summary, GITHUB_ACTIONS: "true" });
+      assert.equal(result.status, 0, result.stderr);
+      const written = fs.readFileSync(summary, "utf8");
+      assert.match(written, /advisory finding\(s\)/);
+      assert.match(written, /\| ⚠️ \| example check \| example detail \|/);
+      assert.match(written, /CCAM_DEPLOY_VALIDATE_STRICT=1/);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });

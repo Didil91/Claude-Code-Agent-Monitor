@@ -9,7 +9,7 @@
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
-const { describe, it } = require("node:test");
+const { describe, it, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -46,8 +46,16 @@ describe("run-npm.js CLI wrapper", () => {
   // A JavaScript npm stub writes exactly what it saw (argv + the two
   // npm_config_* sentinels) to a JSON file. Pointing npm_execpath at it mirrors
   // npm's lifecycle contract and works identically on every platform.
+  const tmpDirs = [];
+  after(() => {
+    for (const dir of tmpDirs) {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
+
   function runStubNpm(args = ["--prefix", "stubdir", "ci"]) {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ccam-run-npm-"));
+    tmpDirs.push(tmp);
     const out = path.join(tmp, "npm-seen.txt");
     const stub = path.join(tmp, "npm-stub.js");
     fs.writeFileSync(

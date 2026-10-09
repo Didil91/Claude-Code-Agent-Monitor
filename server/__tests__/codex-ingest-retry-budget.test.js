@@ -9,7 +9,7 @@
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
-const { describe, it } = require("node:test");
+const { describe, it, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
@@ -19,6 +19,13 @@ const TMP = fs.mkdtempSync(path.join(os.tmpdir(), `codex-retry-budget-${process.
 process.env.DASHBOARD_DB_PATH = path.join(TMP, "dashboard.db");
 
 const { createIngestRetryBudget } = require("../index");
+
+// Requiring ../index opens the SQLite DB under TMP; close it first so Windows
+// can remove the directory.
+after(() => {
+  require("../db").db.close();
+  fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+});
 
 const KEY = "ingest:/rollouts/one.jsonl";
 const FP = "1024:1757370000000";

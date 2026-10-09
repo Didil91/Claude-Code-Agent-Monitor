@@ -11,7 +11,7 @@
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
-const { describe, it } = require("node:test");
+const { describe, it, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -27,6 +27,23 @@ const {
   MAX_FILE_BYTES,
   HOOK_EVENT_TYPES,
 } = require("../lib/cc-discovery");
+
+// Every temp dir a test creates is removed once the file finishes.
+const tmpDirs = [];
+function mkTmp(prefix) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  tmpDirs.push(dir);
+  return dir;
+}
+after(() => {
+  for (const dir of tmpDirs) {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    } catch {
+      /* best-effort temp cleanup */
+    }
+  }
+});
 
 describe("parseFrontmatter", () => {
   it("returns null frontmatter for plain markdown", () => {
@@ -225,7 +242,7 @@ describe("readSkills (symlinked skill directories)", () => {
   it("includes a skill directory that is a symlink to a real directory", symlinkSkip, () => {
     // Dirent.isDirectory() returns false for a symlink even when it points
     // to a directory (Node fs quirk) — readSkillsAt must still follow it.
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-discovery-symlink-"));
+    const tmp = mkTmp("cc-discovery-symlink-");
     const realDir = path.join(tmp, "real-skills", "second-brain");
     fs.mkdirSync(realDir, { recursive: true });
     fs.writeFileSync(
@@ -243,7 +260,7 @@ describe("readSkills (symlinked skill directories)", () => {
   });
 
   it("skips a broken symlink without throwing", symlinkSkip, () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-discovery-broken-symlink-"));
+    const tmp = mkTmp("cc-discovery-broken-symlink-");
     const projectRoot = path.join(tmp, "project");
     const skillsDir = path.join(projectRoot, ".claude", "skills");
     fs.mkdirSync(skillsDir, { recursive: true });
@@ -262,7 +279,7 @@ describe("readAgents (symlinked markdown files)", () => {
     // Same Dirent quirk as symlinked skill directories, but for files:
     // ent.isFile() is false for a symlink pointing at a regular file, so a
     // version-controlled agent linked into .claude/agents/ was invisible.
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-discovery-file-symlink-"));
+    const tmp = mkTmp("cc-discovery-file-symlink-");
     const realFile = path.join(tmp, "repo", "reviewer.md");
     fs.mkdirSync(path.dirname(realFile), { recursive: true });
     fs.writeFileSync(realFile, "---\nname: reviewer\ndescription: Reviews diffs\n---\n\nBody.\n");
@@ -277,7 +294,7 @@ describe("readAgents (symlinked markdown files)", () => {
   });
 
   it("skips a broken .md symlink without throwing", symlinkSkip, () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-discovery-file-broken-"));
+    const tmp = mkTmp("cc-discovery-file-broken-");
     const projectRoot = path.join(tmp, "project");
     const agentsDir = path.join(projectRoot, ".claude", "agents");
     fs.mkdirSync(agentsDir, { recursive: true });
@@ -293,7 +310,7 @@ describe("readAgents (symlinked markdown files)", () => {
 
 describe("isFileLike", () => {
   it("true for a regular file dirent", () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-isfilelike-"));
+    const tmp = mkTmp("cc-isfilelike-");
     fs.writeFileSync(path.join(tmp, "a.md"), "x");
     const ent = fs.readdirSync(tmp, { withFileTypes: true })[0];
     assert.equal(isFileLike(ent, path.join(tmp, ent.name)), true);
@@ -303,7 +320,7 @@ describe("isFileLike", () => {
     "true for a symlink resolving to a file, false for one resolving to a directory",
     symlinkSkip,
     () => {
-      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "cc-isfilelike-sym-"));
+      const tmp = mkTmp("cc-isfilelike-sym-");
       fs.writeFileSync(path.join(tmp, "real.md"), "x");
       fs.mkdirSync(path.join(tmp, "realdir"));
       fs.symlinkSync(path.join(tmp, "real.md"), path.join(tmp, "file-link.md"), "file");

@@ -70,9 +70,15 @@ before(async () => {
 after(async () => {
   await new Promise((resolve) => server.close(resolve));
   const fs = require("fs");
+  // Close the DB first — Windows can't unlink an open file; WAL leaves -wal/-shm.
   try {
-    fs.unlinkSync(TEST_DB);
-  } catch {}
+    require("../db").db.close();
+    for (const suffix of ["", "-wal", "-shm"]) {
+      fs.rmSync(TEST_DB + suffix, { force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  } catch {
+    /* best-effort temp cleanup */
+  }
 });
 
 describe("GET /api/push/vapid-public-key", () => {

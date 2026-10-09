@@ -8,7 +8,7 @@
  * @author Son Nguyen <hoangson091104@gmail.com>
  */
 
-const { describe, it } = require("node:test");
+const { describe, it, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
@@ -18,6 +18,11 @@ const TMP = fs.mkdtempSync(path.join(os.tmpdir(), `events-tool-index-${process.p
 process.env.DASHBOARD_DB_PATH = path.join(TMP, "dashboard.db");
 
 const { db } = require("../db");
+
+after(() => {
+  db.close();
+  fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+});
 
 describe("events.tool_name index", () => {
   it("exists as a partial index over non-NULL tool names", () => {

@@ -10,6 +10,7 @@
 const { describe, it, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
+const fs = require("fs");
 const os = require("os");
 const http = require("http");
 const crypto = require("crypto");
@@ -129,13 +130,20 @@ before(async () => {
   BASE = `http://127.0.0.1:${server.address().port}`;
 });
 
-after(() => {
-  if (server) server.close();
+after(async () => {
+  if (server) await new Promise((r) => server.close(r));
   if (recvServer) recvServer.close();
   try {
     db.close();
   } catch {
     /* ignore */
+  }
+  try {
+    for (const suffix of ["", "-wal", "-shm"]) {
+      fs.rmSync(TEST_DB + suffix, { force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  } catch {
+    /* best-effort temp cleanup */
   }
 });
 
